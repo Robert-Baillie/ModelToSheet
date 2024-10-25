@@ -1,0 +1,3 @@
+[submodule "ModelToSheet/include/spdlog"]
+	path = ModelToSheet/include/spdlog
+	url = https://github.com/gabime/spdlog.git
