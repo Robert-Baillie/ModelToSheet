@@ -14,8 +14,23 @@ if (WIN32)
 endif()
 
 # Target include directories for Librarys, Includes and Other Project Headers
-target_include_directories(ModelToSheet PRIVATE include/spdlog/include src)
+target_include_directories(ModelToSheet PRIVATE	src 
+												include/spdlog/include 
+												include/glfw/include
+												include/glad/include
+)
 
+# Add Glad Library
+add_subdirectory(include/glad)
+target_link_libraries(ModelToSheet glad)
+
+# Add GLFW library
+add_subdirectory(include/glfw) 
+target_link_libraries(ModelToSheet glfw)
+
+# Add SPDLOG library
+add_subdirectory(include/spdlog) 
+target_link_libraries(ModelToSheet spdlog)
 
 # Precompiled header
 target_precompile_headers(ModelToSheet PRIVATE "src/pch.h")

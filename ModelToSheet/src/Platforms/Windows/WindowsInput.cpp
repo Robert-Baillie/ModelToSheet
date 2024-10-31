@@ -1,8 +1,7 @@
 #include "pch.h"
 #include "WindowsInput.h"
 
-// Platform specific includes
-// #include <GLFW/glfw3.h>
+// Platform specific includes #include <GLFW/glfw3.h>
 
 Input* Input::s_Instance = new WindowsInput();
 

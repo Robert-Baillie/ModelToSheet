@@ -28,4 +28,3 @@ private:
 	// Singleton
 	static Input* s_Instance;
 };
-}

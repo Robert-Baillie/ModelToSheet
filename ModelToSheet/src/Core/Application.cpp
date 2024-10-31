@@ -14,6 +14,12 @@ Application::Application() {
 	// Set Random Seed
 	srand(static_cast<unsigned int>(time(0)));
 
+	// Create the window
+	m_Window = std::unique_ptr<Window>(Window::Create());
+	
+	// Bind Application on event.
+	// m_Window->SetEventCallback(BIND_EVENT_FN(Application::OnEvent));
+
 
 	
 
@@ -27,7 +33,13 @@ void Application::Run() {
 
 		TRACE_LOG("Should not be tracing this every frame.");
 
+		m_Window->OnUpdate();
+
 	}
+}
+
+void Application::OnEvent(Event& e)
+{
 }
 
 
