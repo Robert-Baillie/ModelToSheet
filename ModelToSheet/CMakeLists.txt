@@ -19,3 +19,8 @@ target_include_directories(ModelToSheet PRIVATE include/spdlog/include src)
 
 # Precompiled header
 target_precompile_headers(ModelToSheet PRIVATE "src/pch.h")
+
+# Enable assertions in Debug builds
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(ModelToSheet PRIVATE ENABLE_ASSERTS)
+endif()

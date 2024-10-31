@@ -17,9 +17,3 @@ private:
 };
 
 
-// Core Log Macros
-// Define error (...) passing in undetermined variables. When we do we want to call the core logger __VA_ARGS__ passing in the (...) from before
-#define TRACE_LOG(...) ::Log::GetLogger()->trace(__VA_ARGS__)
-#define INFO_LOG(...)  ::Log::GetLogger()->info(__VA_ARGS__)
-#define WARN_LOG(...)  ::Log::GetLogger()->warn(__VA_ARGS__)
-#define ERROR_LOG(...) ::Log::GetLogger()->error(__VA_ARGS__)

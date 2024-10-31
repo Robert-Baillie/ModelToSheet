@@ -17,6 +17,15 @@
 	#include <Windows.h>
 #endif
 
+// Standards
+#include "Core/MacroDefinitions.h"
+#include "Core/KeyCodes.h"
+#include "Core/MouseCodes.h"
 
 // Logging
-#include "core/Log.h"
+#include "Core/Log.h"
+
+// Events
+#include "Events/Event.h"
+#include "Events/EventDispatcher.h"
+#include "Events/KeyEvents.h"
