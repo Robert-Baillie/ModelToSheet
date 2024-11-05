@@ -1,4 +1,6 @@
 #include "Core/Window.h"
+#include "Renderer/GraphicsContext.h"
+
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -30,6 +32,7 @@ private:
 
 private:
 	GLFWwindow* m_Window;
+	GraphicsContext* m_Context;
 	
 	// Struct for the Window Data
 	struct WindowData

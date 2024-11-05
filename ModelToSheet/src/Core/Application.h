@@ -1,6 +1,9 @@
 #pragma once
 #include "Window.h"
-#include "events/Event.h"
+
+#include "ImGui/ImGuiLayer.h"
+
+#include "Events/Event.h"
 
 class Application
 {
@@ -13,8 +16,9 @@ public:
 
 	void OnEvent(Event& e);
 
-	//void PushLayer(Layer* layer);
-	//void PushOverlay(Layer* layer);
+	// Pushing Layers to the stack
+	void PushLayer(Layer* layer);
+	void PushOverlay(Layer* layer);
 	
 	inline static Application& Get() { return *s_Instance; } // Singleton pattern. Only every one instance of Application
 
@@ -25,8 +29,11 @@ private:
 
 private:
 	bool m_Running = true;
+	
 
-	// LayerStack m_LayerStack;
+	// Layers and Stack
+	ImGuiLayer* m_ImGuiLayer;
+	LayerStack m_LayerStack;
 	
 	std::unique_ptr<Window> m_Window;
 };

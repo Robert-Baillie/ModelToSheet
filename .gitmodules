@@ -4,3 +4,7 @@
 [submodule "ModelToSheet/Include/glfw"]
 	path = ModelToSheet/Include/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "ModelToSheet/Include/imgui"]
+	path = ModelToSheet/Include/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

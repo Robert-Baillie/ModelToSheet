@@ -25,6 +25,7 @@ enum  EventCategory {
 };
 
 class Event {
+	friend class EventDispatcher;
 public:
 	inline bool Handled() const { return m_Handled; }
 
