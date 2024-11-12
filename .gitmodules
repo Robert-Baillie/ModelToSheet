@@ -8,3 +8,6 @@
 	path = ModelToSheet/Include/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "ModelToSheet/include/glm"]
+	path = ModelToSheet/include/glm
+	url = https://github.com/g-truc/glm

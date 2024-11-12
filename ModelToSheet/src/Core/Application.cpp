@@ -3,6 +3,7 @@
 
 Application* Application::s_Instance = nullptr;
 
+#include "ExampleLayer.h"
 
 Application::Application() {
 	// Application creation. This is called when the EntryPoint.cpp file creates a new pointer for Application.
@@ -22,9 +23,11 @@ Application::Application() {
 
 
 	 // Add the Layers
+	 PushLayer(new ExampleLayer());
+
 	 m_ImGuiLayer = new ImGuiLayer();
 	 PushOverlay(m_ImGuiLayer);
-	
+	 
 
 }
 
@@ -70,7 +73,29 @@ void Application::PushOverlay(Layer* layer)
 
 void Application::OnEvent(Event& e)
 {
-	
+	// Dispatching an event. Look at window close event and dispatch event if it spots one
+	EventDispatcher dispatcher(e);
+	dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(Application::OnWindowClose));
+
+	// Layers.
+	// Descend the list and call the event. Break if it is handled.
+	for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
+	{
+		(*--it)->OnEvent(e);
+		if (e.Handled())
+			break;
+	}
 }
+
+/* Event Definitions */
+bool Application::OnWindowClose(WindowCloseEvent& e)
+{
+	m_Running = false;
+	return true;
+}
+
+
+
+
 
 

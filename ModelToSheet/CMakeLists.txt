@@ -29,6 +29,7 @@ target_include_directories(ModelToSheet PRIVATE	src
 												include/glfw/include
 												include/glad/include
 												include/imgui
+												include/glm/glm
 )	
 
 # Add Glad Library
@@ -40,9 +41,12 @@ add_subdirectory(include/glfw)
 # Add SPDLOG library
 add_subdirectory(include/spdlog) 
 
+# Add GLM library
+add_subdirectory(include/glm) 
 
 
-target_link_libraries(ModelToSheet PRIVATE glfw glad spdlog) # Private - internal use.
+
+target_link_libraries(ModelToSheet PRIVATE glfw glad spdlog glm) # Private - internal use.
 
 # Precompiled header
 target_precompile_headers(ModelToSheet PRIVATE "src/pch.h")

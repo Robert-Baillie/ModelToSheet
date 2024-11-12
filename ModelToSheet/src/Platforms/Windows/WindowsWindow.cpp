@@ -75,7 +75,7 @@ void WindowsWindow::Init(const WindowProps& props)
 
 		// Create the event and set the callback
 		WindowResizeEvent event(width, height);
-		TRACE_LOG(event.ToString());
+		// TRACE_LOG(event.ToString());
 		data.EventCallback(event);
 
 	});
@@ -85,7 +85,7 @@ void WindowsWindow::Init(const WindowProps& props)
 	{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			WindowCloseEvent event;
-			TRACE_LOG(event.ToString());
+			// TRACE_LOG(event.ToString());
 			data.EventCallback(event);
 	});
 
@@ -94,7 +94,7 @@ void WindowsWindow::Init(const WindowProps& props)
 		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
 		KeyTypedEvent event(keycode);
-		TRACE_LOG(event.ToString());
+		// TRACE_LOG(event.ToString());
 		data.EventCallback(event);
 	});
 
@@ -108,7 +108,7 @@ void WindowsWindow::Init(const WindowProps& props)
 		case GLFW_PRESS:
 		{
 			KeyPressedEvent event(key, 0);
-			TRACE_LOG(event.ToString());
+			// TRACE_LOG(event.ToString());
 			data.EventCallback(event);
 			break;
 
@@ -116,14 +116,14 @@ void WindowsWindow::Init(const WindowProps& props)
 		case GLFW_RELEASE:
 		{
 			KeyReleasedEvent event(key);
-			TRACE_LOG(event.ToString());
+			// TRACE_LOG(event.ToString());
 			data.EventCallback(event);
 			break;
 		}
 		case GLFW_REPEAT:
 		{
 			KeyPressedEvent event(key, 1);
-			TRACE_LOG(event.ToString());
+			// TRACE_LOG(event.ToString());
 			data.EventCallback(event);
 			break;
 		}
@@ -140,7 +140,7 @@ void WindowsWindow::Init(const WindowProps& props)
 			case GLFW_PRESS:
 			{
 				MouseButtonPressedEvent event(button);
-				TRACE_LOG(event.ToString());
+				// TRACE_LOG(event.ToString());
 				data.EventCallback(event);
 				break;
 
@@ -148,7 +148,7 @@ void WindowsWindow::Init(const WindowProps& props)
 			case GLFW_RELEASE:
 			{
 				MouseButtonReleasedEvent event(button);
-				TRACE_LOG(event.ToString());
+				// TRACE_LOG(event.ToString());
 				data.EventCallback(event);
 				break;
 			}
@@ -160,7 +160,7 @@ void WindowsWindow::Init(const WindowProps& props)
 		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
 		MouseScrolledEvent event(float(xOffset), (float)yOffset);
-		TRACE_LOG(event.ToString());
+		// TRACE_LOG(event.ToString());
 		data.EventCallback(event);
 
 	});
@@ -170,7 +170,7 @@ void WindowsWindow::Init(const WindowProps& props)
 		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
 		MouseMovedEvent event(float(xPos), (float)yPos);
-		TRACE_LOG(event.ToString());
+		// TRACE_LOG(event.ToString());
 		data.EventCallback(event);
 
 

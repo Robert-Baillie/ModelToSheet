@@ -4,6 +4,8 @@
 #include "ImGui/ImGuiLayer.h"
 
 #include "Events/Event.h"
+#include "Events/ApplicationEvents.h"
+
 
 class Application
 {
@@ -26,6 +28,9 @@ public:
 
 private:
 	static Application* s_Instance;
+
+private:
+	bool OnWindowClose(WindowCloseEvent& e);
 
 private:
 	bool m_Running = true;
