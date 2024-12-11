@@ -11,3 +11,6 @@
 [submodule "ModelToSheet/include/glm"]
 	path = ModelToSheet/include/glm
 	url = https://github.com/g-truc/glm
+[submodule "ModelToSheet/Include/stb"]
+	path = ModelToSheet/Include/stb
+	url = https://github.com/nothings/stb

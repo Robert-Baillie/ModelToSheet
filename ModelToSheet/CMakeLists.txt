@@ -30,7 +30,8 @@ target_include_directories(ModelToSheet PRIVATE	src
 												include/glad/include
 												include/imgui
 												include/glm/glm
-)	
+												include/stb
+)
 
 # Add Glad Library
 add_subdirectory(include/glad)
