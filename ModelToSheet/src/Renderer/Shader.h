@@ -15,6 +15,8 @@ public:
 
 	void UploadUniformMat4(const std::string& name, const glm::mat4& matrix);
 
+
+	uint32_t GetUniformLocation(const std::string& name) const;
 private:
 	uint32_t m_RendererID;
 };

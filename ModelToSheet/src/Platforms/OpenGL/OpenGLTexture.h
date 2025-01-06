@@ -10,7 +10,7 @@ public:
 
 	virtual ~OpenGLTexture();
 
-	// Methodology for translating the texture wraps, filters
+	
 	virtual void Bind() const override ;
 	virtual uint32_t GetWidth() const override { return m_Width; }
 	virtual uint32_t GetHeight()const  override { return m_Height; }
