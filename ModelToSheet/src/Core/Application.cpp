@@ -76,6 +76,7 @@ void Application::OnEvent(Event& e)
 	// Dispatching an event. Look at window close event and dispatch event if it spots one
 	EventDispatcher dispatcher(e);
 	dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(Application::OnWindowClose));
+	dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(Application::OnWindowResize));
 
 	// Layers.
 	// Descend the list and call the event. Break if it is handled.
@@ -94,7 +95,12 @@ bool Application::OnWindowClose(WindowCloseEvent& e)
 	return true;
 }
 
+bool Application::OnWindowResize(WindowResizeEvent& e)
+{
+	Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 
+	return true;
+}
 
 
 

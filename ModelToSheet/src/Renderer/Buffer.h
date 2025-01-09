@@ -121,7 +121,7 @@ public:
 	virtual void SetLayout(const BufferLayout& layout) = 0;
 	
 	// Pass all that we want to create a vertex buffer from standard items.
-	static VertexBuffer* Create(float* vertices, uint32_t size);
+	static std::shared_ptr<VertexBuffer> Create(float* vertices, uint32_t size);
 };
 
 
@@ -140,5 +140,5 @@ public:
 
 
 	// Pass all that we want to create a vertex buffer from standard items.
-	static IndexBuffer* Create(uint32_t* indicies, uint32_t size);
+	static std::shared_ptr<IndexBuffer> Create(uint32_t* indicies, uint32_t size);
 };

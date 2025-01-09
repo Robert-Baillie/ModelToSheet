@@ -4,8 +4,10 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
-Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc)
+Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc,  std::string shaderName)
 {
+	m_ShaderName = shaderName;
+
 	// Create empty vertex shader handle
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
@@ -63,6 +65,7 @@ Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc)
 
 		// Use the infoLog as you see fit.
 		ERROR("{0}", infoLog.data());
+		TRACE_LOG(infoLog.data());
 		ASSERT(false, "Fragment Shader compilation failure.");
 
 		// In this simple program, we'll just leave
@@ -132,10 +135,71 @@ void Shader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix)
 {
 	// Upload mat4 into shader
 	GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (location == -1)
+	{
+		ERROR_LOG("Uniform {0} not found in shader.", name);
+		return;
+	}
+
 	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 }
+
+void Shader::UploadUniformFloat3(const std::string& name, const glm::vec3& vec)
+{
+	// Get the uniform location in the shader
+	GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (location == -1)
+	{
+		ERROR_LOG("Uniform {0} not found in shader.", name);
+		return;
+	}
+
+	// Upload the float vector to the shader
+	glUniform3fv(location, 1, glm::value_ptr(vec));
+}
+
+
+
 
 uint32_t Shader::GetUniformLocation(const std::string& name) const
 {
 	return glGetUniformLocation(m_RendererID, name.c_str());
+}
+
+std::shared_ptr<Shader> Shader::CreateFromFile(const std::string& vertexPath, const std::string& fragmentPath, std::string shaderName)
+{
+	// Read file function for creating
+	auto readFile = [](const char* fileLocation) -> std::string {
+		std::string content;
+		std::ifstream fileStream(fileLocation, std::ios::in);
+
+		if (!fileStream.is_open())
+		{
+			ERROR_LOG("Failed to read {0}! File doesn't exist.", fileLocation);
+			return "";
+		}
+
+		std::string line = "";
+		while (!fileStream.eof()) // Whilst not the end of file
+		{
+			std::getline(fileStream, line);
+			content.append(line + "\n");
+		}
+
+		fileStream.close();
+		return content;
+
+		};
+
+	// File Strings
+	std::string vertexString = readFile(vertexPath.c_str());
+
+	std::string fragmentString = readFile(fragmentPath.c_str());
+	//std::string geometryString = ""; Currently not supported
+	//if (gShaderFile != nullptr) geometryString = readFile(gShaderFile);
+
+	
+
+
+	return  std::make_shared<Shader>(vertexString, fragmentString, shaderName);
 }

@@ -57,6 +57,11 @@ void WindowsWindow::Init(const WindowProps& props)
 	 m_Context = new OpenGLContext(m_Window);
 	 m_Context->Init();
 
+	 // Enable Depth Testing
+	 glEnable(GL_DEPTH_TEST);   // Enable depth testing
+	 glDepthFunc(GL_LESS);      // Specify the depth comparison function
+
+
 	// Set the GLFW User Pointer.
 	glfwSetWindowUserPointer(m_Window, &m_Data);
 	SetVSync(true);

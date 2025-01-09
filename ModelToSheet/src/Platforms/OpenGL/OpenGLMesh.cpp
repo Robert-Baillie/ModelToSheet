@@ -1,49 +1,47 @@
 #include "pch.h"
 #include "OpenGLMesh.h"
+#include "glad/glad.h"
 
-OpenGLMesh::OpenGLMesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
+OpenGLMesh::OpenGLMesh(const std::vector<Vertex>& vertices,
+    const std::vector<uint32_t>& indices)
+    : m_IndexCount(indices.size())
 {
-	m_Vertices = vertices;
-	m_Indices = indices;
+    m_VertexArray = VertexArray::Create();
+    m_VertexArray->Bind();
 
-	SetUpMesh();
+    // Create vertex buffer
+    std::shared_ptr<VertexBuffer> vertexBuffer = VertexBuffer::Create((float*)vertices.data(), vertices.size() * sizeof(Vertex));
+
+    // Set the layout to match Vertex struct and shader locations
+    BufferLayout layout = {
+        { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float3, "a_Normal" },
+        { ShaderDataType::Float2, "a_TexCoord" }
+    };
+
+    vertexBuffer->SetLayout(layout);
+    m_VertexArray->AddVertexBuffer(vertexBuffer);
+
+    // Create index buffer
+    std::shared_ptr<IndexBuffer> indexBuffer = IndexBuffer::Create((uint32_t*)indices.data(), indices.size());
+    m_VertexArray->SetIndexBuffer(indexBuffer);
+
+    m_VertexArray->Unbind();
 }
 
-OpenGLMesh::~OpenGLMesh()
+void OpenGLMesh::Bind() const
 {
-	delete m_VertexArray;
-	delete m_VertexBuffer;
-	delete m_IndexBuffer;
+    m_VertexArray->Bind();
 }
 
-
-OpenGLMesh::SetUpMesh()
+void OpenGLMesh::Unbind() const
 {
-	// Create Buffers
-	m_VertexArray = VertexArray::Create();
-	m_VertexBuffer = VertexBuffer::Create(&m_Vertices[0], m_Vertices.size() * sizeof(Vertex));
-	m_IndexBuffer = IndexBuffer::Create(&m_Indices[0], m_Indices.size());
-
-	// Buffer Layout
-	BufferLayout layout = {
-		{ ShaderDataType::Float3, "a_Position" },
-		{ ShaderDataType::Float3, "a_Normal" },
-		{ ShaderDataType::Float2, "a_TexCoord" }
-	};
-	
-	m_VertexBuffer->SetLayout(layout);
-
-	// Add Vertex Buffer to VertexArray
-	m_VertexArray->AddVertexBuffer(m_VertexBuffer);
-	m_VertexArray->SetIndexBuffer(m_IndexBuffer);
+    m_VertexArray->Unbind();
 }
-
 
 void OpenGLMesh::Draw() const
 {
-	// Bind and draw the mesh
-	m_VertexArray->Bind();
-	glDrawElements(GL_TRIANGLES, m_IndexBuffer->GetCount(), GL_UNSIGNED_INT, nullptr);
+    Bind();
+    glDrawElements(GL_TRIANGLES, m_IndexCount, GL_UNSIGNED_INT, nullptr);
+    Unbind();
 }
-
-

@@ -1,10 +1,10 @@
 #pragma once
 #include "RenderCommand.h"
 
-#include "Camera.h"
+#include "Scene/Camera.h"
 #include "Shader.h"
 
-#include "SceneData.h"
+#include "Scene/SceneData.h"
 
 // Static Renderer Class that renders based on the SceneData and Camera given.
 class Renderer
@@ -12,6 +12,9 @@ class Renderer
 public:
 	static void BeginScene(Camera& camera);
 	static void EndScene();
+
+	static void OnWindowResize(uint32_t width, uint32_t height);
+
 
 	static void Submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray);
 

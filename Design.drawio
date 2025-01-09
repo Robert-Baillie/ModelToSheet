@@ -1,0 +1,74 @@
+```mermaid
+graph TD
+    %% Core Module
+    Core[Core]
+    Core --> Application[Application.h/.cpp]
+    Core --> EntryPoint[EntryPoint.cpp]
+    Core --> ExampleLayer[ExampleLayer.h]
+    Core --> Input[Input.h]
+    Core --> KeyCodes[KeyCodes.h]
+    Core --> Layer[Layer.h/.cpp]
+    Core --> LayerStack[LayerStack.h/.cpp]
+    Core --> Log[Log.h/.cpp]
+    Core --> MacroDefinitions[MacroDefinitions.h]
+    Core --> MouseCodes[MouseCodes.h]
+    Core --> Window[Window.h]
+
+    %% Events Module
+    Events[Events]
+    Events --> ApplicationEvents[ApplicationEvents.h]
+    Events --> Event[Event.h]
+    Events --> EventDispatcher[EventDispatcher.h]
+    Events --> KeyEvents[KeyEvents.h]
+    Events --> MouseEvents[MouseEvents.h]
+
+    %% ImGui Module
+    ImGui[ImGui]
+    ImGui --> ImGuiLayer[ImGuiLayer.h/.cpp]
+
+    %% Platforms Module
+    Platforms[Platforms]
+    Platforms --> OpenGL[OpenGL]
+    OpenGL --> OpenGLBuffer[OpenGLBuffer.h/.cpp]
+    OpenGL --> OpenGLContext[OpenGLContext.h/.cpp]
+    OpenGL --> OpenGLMaterial[OpenGLMaterial.h/.cpp]
+    OpenGL --> OpenGLMesh[OpenGLMesh.h/.cpp]
+    OpenGL --> OpenGLRendererAPI[OpenGLRendererAPI.h/.cpp]
+    OpenGL --> OpenGLTexture[OpenGLTexture.h/.cpp]
+    OpenGL --> OpenGLVertexArray[OpenGLVertexArray.h/.cpp]
+    Platforms --> Windows[Windows]
+    Windows --> WindowsInput[WindowsInput.h/.cpp]
+    Windows --> WindowsWindow[WindowsWindow.h/.cpp]
+
+    %% Renderer Module
+    Renderer[Renderer]
+    Renderer --> Buffer[Buffer.h/.cpp]
+    Renderer --> GraphicsContext[GraphicsContext.h]
+    Renderer --> Material[Material.h/.cpp]
+    Renderer --> Mesh[Mesh.h/.cpp]
+    Renderer --> Model[Model.h/.cpp]
+    Renderer --> RenderCommand[RenderCommand.h/.cpp]
+    Renderer --> Renderer[Renderer.h/.cpp]
+    Renderer --> RendererAPI[RendererAPI.h/.cpp]
+    Renderer --> Shader[Shader.h/.cpp]
+    Renderer --> Texture[Texture.h/.cpp]
+    Renderer --> VertexArray[VertexArray.h/.cpp]
+
+    %% Scene Module
+    Scene[Scene]
+    Scene --> Camera[Camera.h/.cpp]
+    Scene --> SceneData[SceneData.h]
+
+    %% Root Files
+    RootFiles[Root Files]
+    RootFiles --> PCH[pch.h]
+    RootFiles --> Tree[tree.txt]
+
+    %% Relationships
+    Application -->|Uses| Events
+    Application -->|Renders| ImGui
+    Renderer -->|Uses| Platforms
+    Renderer -->|Uses| Scene
+    Renderer -->|Implements| Core
+```
+

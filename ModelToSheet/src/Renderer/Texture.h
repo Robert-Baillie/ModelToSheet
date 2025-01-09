@@ -49,7 +49,21 @@ public:
 	virtual const Specification& GetSpecification() const = 0;
 
 	
+	// Static function to load a texture from a file
+	static std::shared_ptr<Texture> LoadFromFile(const std::string& path, const Specification& spec = Specification());
 
-	// Static function to create a vertex array
+	// Helper function to get a default specification. Don't want to have to repeat this code
+	static Specification GetDefaultSpecification() {
+		Specification spec;
+		spec.internalFormat = TextureFormat::RGBA;
+		spec.imageFormat = TextureFormat::RGBA;
+		spec.wrapS = TextureWrap::Repeat;
+		spec.wrapT = TextureWrap::Repeat;
+		spec.minFilter = TextureFilter::LinearMipmapLinear;
+		spec.maxFilter = TextureFilter::Linear;
+		return spec;
+	}
+
+	// Static function to create a texture
 	static Texture* Create(uint32_t width, uint32_t height, const Specification& spec, unsigned char* data);
 };

@@ -5,6 +5,7 @@
 
 #include "Platforms/OpenGL/OpenGLMaterial.h"
 
+
 Material* Material::Create(const MaterialProperties& props)
 {
 	switch (Renderer::GetAPI())
@@ -19,3 +20,4 @@ Material* Material::Create(const MaterialProperties& props)
 	ASSERT(false, "Unknown Renderer API!");
 	return nullptr;
 }
+

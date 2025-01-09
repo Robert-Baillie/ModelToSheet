@@ -31,6 +31,7 @@ target_include_directories(ModelToSheet PRIVATE	src
 												include/imgui
 												include/glm/glm
 												include/stb
+												include/assimp/include
 )
 
 # Add Glad Library
@@ -46,8 +47,19 @@ add_subdirectory(include/spdlog)
 add_subdirectory(include/glm) 
 
 
+# Assimp options
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
+set(ASSIMP_BUILD_TESTS OFF)
+set(ASSIMP_NO_EXPORT ON)
+set(ASSIMP_INSTALL OFF)
 
-target_link_libraries(ModelToSheet PRIVATE glfw glad spdlog glm) # Private - internal use.
+
+
+# Add ASSIMP library
+add_subdirectory(include/assimp) 
+
+
+target_link_libraries(ModelToSheet PRIVATE glfw glad spdlog glm assimp) # Private - internal use.
 
 # Precompiled header
 target_precompile_headers(ModelToSheet PRIVATE "src/pch.h")

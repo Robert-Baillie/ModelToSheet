@@ -14,3 +14,6 @@
 [submodule "ModelToSheet/Include/stb"]
 	path = ModelToSheet/Include/stb
 	url = https://github.com/nothings/stb
+[submodule "ModelToSheet/Include/assimp"]
+	path = ModelToSheet/Include/assimp
+	url = https://github.com/assimp/assimp

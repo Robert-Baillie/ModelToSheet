@@ -3,136 +3,163 @@
 #include "Renderer/VertexArray.h"
 #include "Input.h"
 #include "Renderer/Renderer.h"	
-#include "Renderer/Camera.h"
+#include "Scene/Camera.h"
 #include "Renderer/Texture.h"
 #include "Renderer/Material.h"
+#include "Renderer/Model.h"
+
+#include <filesystem>
+#include <glm/gtc/matrix_transform.hpp> // temp
 
 class ExampleLayer : public Layer {
 public:
-    ExampleLayer() : Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f) {
-        // Vertex array setup remains the same
-        m_VertexArray.reset(VertexArray::Create());
+    ExampleLayer() : Layer("Example"),
+        m_Camera(45.0f, 1920.0f / 1080.0f, 0.1f, 100.0f)  // FOV, aspect ratio, near, far
+    {   
+        std::filesystem::path currentPath = std::filesystem::path(__FILE__).parent_path();
 
-        float texturedQuadVertices[5 * 4] = {
-            -0.5f, -0.5f, 0.0f,   0.0f, 0.0f,
-             0.5f, -0.5f, 0.0f,   1.0f, 0.0f,
-             0.5f,  0.5f, 0.0f,   1.0f, 1.0f,
-            -0.5f,  0.5f, 0.0f,   0.0f, 1.0f
-        };
+        // Find Project Root and the file location
+        std::filesystem::path vertexPath = currentPath.parent_path().parent_path() /  "resources" / "Shaders" / "Vertex.shader";
+        std::filesystem::path fragmentPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "Fragment.shader";
 
-        std::shared_ptr<VertexBuffer> vertexBuffer;
-        vertexBuffer.reset(VertexBuffer::Create(texturedQuadVertices, sizeof(texturedQuadVertices)));
-        vertexBuffer->SetLayout({
-            { ShaderDataType::Float3, "a_Position"},
-            { ShaderDataType::Float2, "a_TexCoord"}
-            });
-        m_VertexArray->AddVertexBuffer(vertexBuffer);
 
-        unsigned int quadIndices[6] = { 0, 1, 2, 2, 3, 0 };
-        std::shared_ptr<IndexBuffer> indexBuffer;
-        indexBuffer.reset(IndexBuffer::Create(quadIndices, sizeof(quadIndices) / sizeof(uint32_t)));
-        m_VertexArray->SetIndexBuffer(indexBuffer);
+        // Create a shader with support for material properties
+        m_Shader = Shader::CreateFromFile(vertexPath.string(), fragmentPath.string(), "ExampleShader");
+        
+        
+        
+        try {
+            std::string executablePath = std::filesystem::current_path().string();
+            // Load the model with its name
+             std::string modelPath = executablePath + "/Assets/Models/IronMan.obj";
+             m_Model = std::make_shared<Model>(modelPath, "IronMan");
+            // std::string modelPath = executablePath + "/Assets/Models/scene.gltf";
+            // m_Model = std::make_shared<Model>(modelPath, "Dog");
 
-        // Updated shader with material properties
-        std::string vertexSrc = R"(
-            #version 330 core
-            layout(location = 0) in vec3 a_Position;
-            layout(location = 1) in vec2 a_TexCoord;
-            
-            uniform mat4 u_ViewProjection;
-            out vec2 v_TexCoord;
+            // Create default material properties for the shader
+            MaterialProperties defaultProps;
+            defaultProps.ambient = 0.5f;
+            defaultProps.diffuse = 0.8f;
+            defaultProps.specular = 0.01f;
+            defaultProps.shininess = 32.0f;
+            defaultProps.shader = m_Shader;
 
-            void main() {
-                v_TexCoord = a_TexCoord;
-                gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+            // Create default texture if needed 
+            if (!m_Model->GetMaterialList().empty() && !m_Model->GetMaterialList()[0]->GetProperties().diffuseMap) {
+                Texture::Specification texSpec = Texture::GetDefaultSpecification();
+
+                // Create a simple checkerboard texture
+                unsigned char textureData[16 * 16 * 4];
+                for (int y = 0; y < 16; y++) {
+                    for (int x = 0; x < 16; x++) {
+                        int index = (y * 16 + x) * 4;
+                        bool isBlack = (x + y) % 2 == 0;
+                        textureData[index] = isBlack ? 0 : 255;
+                        textureData[index + 1] = isBlack ? 0 : 255;
+                        textureData[index + 2] = isBlack ? 0 : 255;
+                        textureData[index + 3] = 255;
+                    }
+                }
+
+                auto defaultTexture = std::shared_ptr<Texture>(
+                    Texture::Create(16, 16, texSpec, textureData));
+                defaultProps.diffuseMap = defaultTexture;
+                defaultProps.specularMap = defaultTexture; 
             }
-        )";
 
-        std::string fragmentSrc = R"(
-            #version 330 core
-            layout(location = 0) out vec4 color;
-            
-            in vec2 v_TexCoord;
-            
-            uniform sampler2D u_DiffuseMap;
-            uniform float u_Specular;
-            uniform float u_Shininess;
-            
-            void main() {
-                vec4 texColor = texture(u_DiffuseMap, v_TexCoord);
-                color = texColor * vec4(1.0 + u_Specular, 1.0 + u_Specular, 1.0 + u_Specular, 1.0);
-            }
-        )";
-
-        m_Shader.reset(new Shader(vertexSrc, fragmentSrc));
-
-        // Create texture
-        Texture::Specification texSpec;
-        texSpec.internalFormat = TextureFormat::RGBA;
-        texSpec.imageFormat = TextureFormat::RGBA;
-
-        unsigned char textureData[16 * 16 * 4];
-        for (int y = 0; y < 16; y++) {
-            for (int x = 0; x < 16; x++) {
-                int index = (y * 16 + x) * 4;
-                bool isBlack = (x + y) % 2 == 0;
-                textureData[index] = isBlack ? 0 : 255;
-                textureData[index + 1] = isBlack ? 0 : 255;
-                textureData[index + 2] = isBlack ? 0 : 255;
-                textureData[index + 3] = 255;
+            // Update all materials with the shader. Should this not be in the model itself?
+            for (auto& material : m_Model->GetMaterialList()) {
+                if (material) {
+                    auto props = material->GetProperties();
+                    props.shader = m_Shader;
+                    material->SetProperties(props);
+                }
             }
         }
-
-        m_Texture.reset(Texture::Create(16, 16, texSpec, textureData));
-
-        // Create material
-        MaterialProperties matProps;
-        matProps.ambient = 0.2f;
-        matProps.diffuse = 0.8f;
-        matProps.specular = 0.5f;
-        matProps.shininess = 32.0f;
-        matProps.diffuseMap = m_Texture.get();
-
-        m_Material.reset(Material::Create(matProps));
+        catch (const std::exception& e) {
+            ERROR_LOG("Failed to load model: {0}", e.what());
+        }
     }
 
     void OnUpdate() override {
-        // Camera controls remain the same
-        if (Input::IsKeyPressed(KEY_LEFT))
-            m_CameraPosition.x -= m_CameraSpeed;
-        if (Input::IsKeyPressed(KEY_RIGHT))
-            m_CameraPosition.x += m_CameraSpeed;
-        if (Input::IsKeyPressed(KEY_UP))
-            m_CameraPosition.y += m_CameraSpeed;
-        if (Input::IsKeyPressed(KEY_DOWN))
-            m_CameraPosition.y -= m_CameraSpeed;
+        ControlCamera(); // Should be split into collect inputs and update camera after render 
 
+        // Update model rotation
+        m_ModelRotation += 0.5f;
+        if (m_ModelRotation >= 360.0f) {
+            m_ModelRotation -= 360.0f;
+        }
+
+        float angle = m_ModelRotation * 3.14159f / 180.0f;
+        glm::mat4 transform = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+        // Rendering
         RenderCommand::SetClearColour({ 0.1f, 0.1f, 0.1f, 1 });
         RenderCommand::Clear();
 
-        m_Camera.SetPosition(m_CameraPosition);
         Renderer::BeginScene(m_Camera);
 
-        // Get uniform locations
-        uint32_t specularLoc = m_Shader->GetUniformLocation("u_Specular");
-        uint32_t shininessLoc = m_Shader->GetUniformLocation("u_Shininess");
-
-
-        // Bind shader and use material
+        // Update shader uniforms
         m_Shader->Bind();
-        m_Material->UseMaterial(specularLoc, shininessLoc);
+        m_Shader->UploadUniformMat4("u_ViewProjection", m_Camera.GetViewProjectionMatrix());
+        m_Shader->UploadUniformMat4("u_Transform", transform);
 
-        Renderer::Submit(m_Shader, m_VertexArray);
+        // Upload light position and view position. Set Light as constant and set View Pos to the camera
+        m_Shader->UploadUniformFloat3("lightPos",{1.0f, 1.0f, 1.0f});
+        m_Shader->UploadUniformFloat3("viewPos", m_CameraPosition);
+
+        // Draw the model - it will handle its own materials
+        if (m_Model) {
+            m_Model->Draw();
+        }
+
         Renderer::EndScene();
     }
 
 private:
     std::shared_ptr<Shader> m_Shader;
-    std::shared_ptr<VertexArray> m_VertexArray;
-    std::shared_ptr<Texture> m_Texture;
-    std::shared_ptr<Material> m_Material;
+    std::shared_ptr<Model> m_Model;
 
-    OrthographicCamera m_Camera;
-    glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
-    float m_CameraSpeed = 0.1f;
+    PerspectiveCamera m_Camera;
+    glm::vec3 m_CameraPosition = { 0.0f, 2.0f, 1.0f };
+    float m_CameraSpeed = 15.0f;
+    float m_ModelRotation = 0.0f;
+    float m_RotationSpeed = 20.0f;
+    float m_DeltaTime = 0.016f; // Simulating 60fps
+
+
+private:
+    void ControlCamera() {
+        // Position control
+        glm::vec3 position = m_Camera.GetPosition();
+
+        if (Input::IsKeyPressed(KEY_A))  // Left
+            position.x -= m_CameraSpeed * m_DeltaTime;
+        if (Input::IsKeyPressed(KEY_D))  // Right
+            position.x += m_CameraSpeed * m_DeltaTime;
+        if (Input::IsKeyPressed(KEY_W))  // Forward
+            position.z -= m_CameraSpeed * m_DeltaTime;
+        if (Input::IsKeyPressed(KEY_S))  // Backward
+            position.z += m_CameraSpeed * m_DeltaTime;
+        if (Input::IsKeyPressed(KEY_E))  // Up
+            position.y += m_CameraSpeed * m_DeltaTime;
+        if (Input::IsKeyPressed(KEY_Q))  // Down
+            position.y -= m_CameraSpeed * m_DeltaTime;
+
+        m_Camera.SetPosition(position);
+
+        m_CameraPosition = position;
+
+        // Rotation control
+        float rotation = m_Camera.GetRotation();
+        if (Input::IsKeyPressed(KEY_LEFT))  // Rotate counterclockwise
+            rotation += m_RotationSpeed * m_DeltaTime;
+        if (Input::IsKeyPressed(KEY_RIGHT)) // Rotate clockwise
+            rotation -= m_RotationSpeed * m_DeltaTime;
+
+        m_Camera.SetRotation(rotation);
+
+    }
+
+   
 };
