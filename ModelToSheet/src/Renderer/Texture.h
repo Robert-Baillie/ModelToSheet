@@ -59,7 +59,7 @@ public:
 		spec.imageFormat = TextureFormat::RGBA;
 		spec.wrapS = TextureWrap::Repeat;
 		spec.wrapT = TextureWrap::Repeat;
-		spec.minFilter = TextureFilter::LinearMipmapLinear;
+		spec.minFilter = TextureFilter::Linear;
 		spec.maxFilter = TextureFilter::Linear;
 		return spec;
 	}

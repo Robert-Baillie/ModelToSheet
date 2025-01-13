@@ -21,7 +21,7 @@ public:
 	void ClearModel();
 
 	inline const std::vector<std::shared_ptr<Material>> GetMaterialList() { return m_MaterialList; }
-
+	void SetMaterials(const std::vector<std::shared_ptr<Material>>& materials) { m_MaterialList = materials;}
 private:
 	void LoadNode(aiNode* node, const aiScene* scene);
 	void LoadMesh(aiMesh* mesh, const aiScene* scene);

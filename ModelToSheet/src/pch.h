@@ -63,6 +63,9 @@
 #include "Events/MouseEvents.h"
 #include "Events/ApplicationEvents.h"
 
+
+#include "Core/ResourceManager.h"
+
 // Layer and Stack
 #include "Core/Layer.h"
 #include "Core/LayerStack.h"

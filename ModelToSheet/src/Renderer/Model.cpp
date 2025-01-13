@@ -266,7 +266,9 @@ std::shared_ptr<Texture> Model::LoadTexture(aiTextureType type, const aiScene* s
 		else {
 			// Extrnal texture file
 			std::string fullPath = directory + "/" + path.data;
-			return Texture::LoadFromFile(fullPath);
+			auto tex = RESOURCE_MANAGER.LoadTexture(fullPath, "TEST NAME" + directory);
+			return tex; // To do: fix! Shouldn't be test name
+			//return Texture::LoadFromFile(fullPath);		// This makes texture work, but does not load it into the Resource Manager
 		}
 	}
 	return nullptr;
