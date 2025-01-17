@@ -26,23 +26,7 @@ void Model::LoadModel(const std::string& fileName)
 		ERROR_LOG("Model {0} failed to load: {1}", fileName.c_str(), importer.GetErrorString());
 		return;
 	}
-
-	std::string directory = std::filesystem::path(fileName).parent_path().string();
-	std::string mtlExpectedPath = directory + "/IronMan.mtl";
-
-	TRACE_LOG("Model path: {0}", fileName);
-	TRACE_LOG("Directory: {0}", directory);
-	TRACE_LOG("Expected MTL path: {0}", mtlExpectedPath);
-	TRACE_LOG("MTL exists: {0}", std::filesystem::exists(mtlExpectedPath) ? "Yes" : "No");
-
-
-	// Log scene information
-	TRACE_LOG("Scene loaded:");
-	TRACE_LOG("  Meshes: {0}", scene->mNumMeshes);
-	TRACE_LOG("  Materials: {0}", scene->mNumMaterials);
-	TRACE_LOG("  Textures: {0}", scene->mNumTextures);
-
-
+	
 	LoadNode(scene->mRootNode, scene); // Check this.
 	LoadMaterials(scene);
 }
@@ -161,23 +145,27 @@ void Model::LoadMaterials(const aiScene* scene)
 	TRACE_LOG("Loading in {0} materials", numOfMat);
 
 	std::string directory = m_ModelPath.substr(0, m_ModelPath.find_last_of('/'));
+	
+	auto defaultShader = RESOURCE_MANAGER.GetDefaultShader();
+	auto defaultTexture = RESOURCE_MANAGER.GetDefaultTexture();
 
 	// DEBUG LOOP
-	for (unsigned int i = 0; i < numOfMat; i++) {
-		aiMaterial* material = scene->mMaterials[i];
-		aiString matName;
-		material->Get(AI_MATKEY_NAME, matName);
+	//for (unsigned int i = 0; i < numOfMat; i++) {
+	//	aiMaterial* material = scene->mMaterials[i];
+	//	aiString matName;
+	//	material->Get(AI_MATKEY_NAME, matName);
 
-		// Get material properties
-		aiColor3D diffuse(0.0f, 0.0f, 0.0f);
-		aiString diffuseTexPath;
-		bool hasDiffuseTex = material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseTexPath) == AI_SUCCESS;
+	//	// Get material properties
+	//	aiColor3D diffuse(0.0f, 0.0f, 0.0f);
+	//	aiString diffuseTexPath;
+	//	bool hasDiffuseTex = material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseTexPath) == AI_SUCCESS;
 
-		TRACE_LOG("Material [{0}] '{1}':", i, matName.C_Str());
-		TRACE_LOG("  - Diffuse texture path: {0}", hasDiffuseTex ? diffuseTexPath.C_Str() : "none");
-		material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-		TRACE_LOG("  - Diffuse color: ({0}, {1}, {2})", diffuse.r, diffuse.g, diffuse.b);
-	}
+	//	TRACE_LOG("Material [{0}] '{1}':", i, matName.C_Str());
+	//	TRACE_LOG("  - Diffuse texture path: {0}", hasDiffuseTex ? diffuseTexPath.C_Str() : "none");
+	//	material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
+	//	TRACE_LOG("  - Diffuse color: ({0}, {1}, {2})", diffuse.r, diffuse.g, diffuse.b);
+	//}
+
 
 
 	for (unsigned int i = 0; i < numOfMat; i++) {
@@ -201,7 +189,10 @@ void Model::LoadMaterials(const aiScene* scene)
 		props.specular = (specular.r + specular.g + specular.b) / 3.0f;
 		props.shininess = shininess;
 		if (props.shininess < 0.1f) props.shininess = 0.1f; // Set the shininess to , otherwise itll be black.
+		props.shader = defaultShader; // Give the default shader to start
 
+
+		// If there is a diffuse texture then load it, else assign the default one
 		if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
 			props.diffuseMap = LoadTexture(aiTextureType_DIFFUSE, scene, material, directory);
 
@@ -209,6 +200,7 @@ void Model::LoadMaterials(const aiScene* scene)
 				ERROR_LOG("Failed to load diffuse texture for material {0}", i);
 			}
 		}
+		else props.diffuseMap = defaultTexture;
 		
 		if(material->GetTextureCount(aiTextureType_SPECULAR) > 0) {
 			props.specularMap = LoadTexture(aiTextureType_SPECULAR, scene, material, directory);
@@ -217,8 +209,26 @@ void Model::LoadMaterials(const aiScene* scene)
 				ERROR_LOG("Failed to load diffuse texture for material {0}", i);
 			}
 		}
+		else props.specularMap = defaultTexture;
 
-		m_MaterialList[i] = std::shared_ptr<Material>(Material::Create(props));
+
+	
+		// Get the material name
+		aiString matName;
+		material->Get(AI_MATKEY_NAME, matName);
+		std::string uniqueName = fmt::format("{0}_{1}_Material_{2}",
+			matName.C_Str(),
+			m_ModelPath.substr(m_ModelPath.find_last_of('/') + 1),
+			i);
+
+
+		auto mat = RESOURCE_MANAGER.CreateMaterial(props, uniqueName);
+		m_MaterialList[i] = mat;
+	}
+
+	// If no materials were loaded, use default
+	if (m_MaterialList.empty()) {
+		m_MaterialList.push_back(RESOURCE_MANAGER.GetDefaultMaterial());
 	}
 }
 
@@ -266,9 +276,12 @@ std::shared_ptr<Texture> Model::LoadTexture(aiTextureType type, const aiScene* s
 		else {
 			// Extrnal texture file
 			std::string fullPath = directory + "/" + path.data;
-			auto tex = RESOURCE_MANAGER.LoadTexture(fullPath, "TEST NAME" + directory);
-			return tex; // To do: fix! Shouldn't be test name
-			//return Texture::LoadFromFile(fullPath);		// This makes texture work, but does not load it into the Resource Manager
+
+			// Unique texture name
+			std::string textureName = m_ModelName + "_" + std::filesystem::path(path.data).filename().string();
+
+			auto tex = RESOURCE_MANAGER.LoadTexture(fullPath, textureName);
+			return tex; 
 		}
 	}
 	return nullptr;

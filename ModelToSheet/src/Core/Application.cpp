@@ -1,9 +1,10 @@
 #include "pch.h"
 #include "Application.h"
 
+
+
 Application* Application::s_Instance = nullptr;
 
-#include "ExampleLayer.h"
 
 Application::Application() {
 	// Application creation. This is called when the EntryPoint.cpp file creates a new pointer for Application.
@@ -23,7 +24,8 @@ Application::Application() {
 
 
 	 // Add the Layers
-	 PushLayer(new ExampleLayer());
+	 PushLayer(new DockspaceLayer());
+	 PushLayer(new ViewportLayer());
 
 	 m_ImGuiLayer = new ImGuiLayer();
 	 PushOverlay(m_ImGuiLayer);
@@ -41,7 +43,6 @@ void Application::Run() {
 			layer->OnUpdate();
 
 		// ImGui
-		// To Do: Seperate Update and Render into threads?
 		m_ImGuiLayer->Begin();
 		for (Layer* layer : m_LayerStack)
 			layer->OnImGuiRender();
@@ -98,6 +99,7 @@ bool Application::OnWindowClose(WindowCloseEvent& e)
 bool Application::OnWindowResize(WindowResizeEvent& e)
 {
 	Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
+	
 
 	return true;
 }

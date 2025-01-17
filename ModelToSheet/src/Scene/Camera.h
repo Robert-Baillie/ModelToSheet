@@ -15,6 +15,7 @@ public:
 	const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
 	const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
 	const glm::mat4& GetViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
+
 protected:
 	virtual void RecalculateViewMatrix() = 0; // To be calculated per Camera Type
 protected:
@@ -42,6 +43,11 @@ public:
 	PerspectiveCamera(float fov, float aspectRatio, float nearClip, float farClip);
 
 	void SetProjection(float fov, float aspectRatio, float nearClip, float farClip);
+	void SetAspectRatio(float ratio) {
+		m_AspectRatio = ratio;
+		
+		RecalculateProjectionMatrix();
+	}
 
 protected:
 	virtual void RecalculateViewMatrix() override;

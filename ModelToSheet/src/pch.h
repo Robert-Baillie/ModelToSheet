@@ -63,12 +63,17 @@
 #include "Events/MouseEvents.h"
 #include "Events/ApplicationEvents.h"
 
+// Renderer
+#include "Renderer/Renderer.h"
 
+// Resources
 #include "Core/ResourceManager.h"
 
 // Layer and Stack
-#include "Core/Layer.h"
-#include "Core/LayerStack.h"
-#include "ImGui/ImGuiLayer.h"
+#include "Layers/Layer.h"
+#include "Layers/LayerStack.h"
+#include "Layers/ImGuiLayer.h"
+#include "Layers/ViewportLayer.h"
+#include "Layers/DockspaceLayer.h"
 
 

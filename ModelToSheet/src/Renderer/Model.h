@@ -27,7 +27,6 @@ private:
 	void LoadMesh(aiMesh* mesh, const aiScene* scene);
 	void LoadMaterials(const aiScene* scene);
 
-
 	std::shared_ptr<Texture> LoadTexture(aiTextureType flag, const aiScene* scene, const aiMaterial* material, const std::string& directory);
 
 	std::string m_ModelName;
