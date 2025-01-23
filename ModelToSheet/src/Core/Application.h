@@ -1,7 +1,6 @@
 #pragma once
 #include "Window.h"
 
-#include "Layers/ImGuiLayer.h"
 
 #include "Events/Event.h"
 #include "Events/ApplicationEvents.h"
@@ -38,8 +37,8 @@ private:
 	
 
 	// Layers and Stack
-	ImGuiLayer* m_ImGuiLayer;
 	LayerStack m_LayerStack;
+	DockspaceLayer* m_DockSpaceLayer;
 	
 	std::unique_ptr<Window> m_Window;
 };

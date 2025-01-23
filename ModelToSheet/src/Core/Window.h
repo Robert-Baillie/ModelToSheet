@@ -30,6 +30,7 @@ public:
 	virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
 	virtual void SetVSync(bool enabled) = 0;
 	virtual bool IsVSync() const = 0;
+	virtual float GetDeltaTime()  = 0;
 
 	// Get the native Window from GLFW or any other platform specific library.
 	virtual void* GetNativeWindow() const = 0;

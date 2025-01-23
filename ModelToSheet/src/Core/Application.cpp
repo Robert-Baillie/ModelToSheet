@@ -10,7 +10,7 @@ Application::Application() {
 	// Application creation. This is called when the EntryPoint.cpp file creates a new pointer for Application.
 	
 	// Standard check for any singleton.
-	ASSERT(!s_Instance, "Application already exists.")
+	ASSERT(!s_Instance, "Application already exists.");
 	s_Instance = this;
 
 	// Set Random Seed
@@ -24,11 +24,11 @@ Application::Application() {
 
 
 	 // Add the Layers
-	 PushLayer(new DockspaceLayer());
+	 m_DockSpaceLayer = new  DockspaceLayer(); // This layer handles the imgui initialisation per renderer
+	 PushLayer(m_DockSpaceLayer);
 	 PushLayer(new ViewportLayer());
 
-	 m_ImGuiLayer = new ImGuiLayer();
-	 PushOverlay(m_ImGuiLayer);
+	 PushOverlay(new UILayer());
 	 
 
 }
@@ -43,12 +43,10 @@ void Application::Run() {
 			layer->OnUpdate();
 
 		// ImGui
-		m_ImGuiLayer->Begin();
+		m_DockSpaceLayer->Begin();
 		for (Layer* layer : m_LayerStack)
 			layer->OnImGuiRender();
-
-		m_ImGuiLayer->End();
-
+		m_DockSpaceLayer->End();
 
 		// Update the window
 		m_Window->OnUpdate();

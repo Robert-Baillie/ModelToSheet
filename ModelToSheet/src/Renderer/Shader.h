@@ -15,6 +15,7 @@ public:
 
 	void UploadUniformMat4(const std::string& name, const glm::mat4& matrix);
 	void UploadUniformFloat3(const std::string& name, const glm::vec3& vec);
+	void UploadUniformMat4Array(const std::string& name, const std::vector<glm::mat4>& matrices);
 
 	uint32_t GetUniformLocation(const std::string& name) const;
 

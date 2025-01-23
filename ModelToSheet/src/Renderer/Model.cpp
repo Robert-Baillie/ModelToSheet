@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Model.h"
 
+
 Model::Model(const std::string& fileName, const std::string modelName)
 {
 	m_ModelPath = fileName;
@@ -17,18 +18,21 @@ void Model::LoadModel(const std::string& fileName)
 	/*TRACE_LOG("Attempting to load model from: {0}", fileName);
 	TRACE_LOG("Working directory: {0}", std::filesystem::current_path().string());*/
 
+	const aiScene* scene = importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices  |aiProcess_GlobalScale | aiProcess_LimitBoneWeights);
 
-
-
-	const aiScene* scene = importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices | aiProcess_PreTransformVertices |aiProcess_GlobalScale);
 
 	if (!scene) {
 		ERROR_LOG("Model {0} failed to load: {1}", fileName.c_str(), importer.GetErrorString());
 		return;
 	}
-	
-	LoadNode(scene->mRootNode, scene); // Check this.
+
+	TRACE_LOG("This model has {0} animations: ", scene->mNumAnimations);
+ 	LoadNode(scene->mRootNode, scene); 
 	LoadMaterials(scene);
+
+	// for (const auto& pair : m_BoneInfoMap) {
+	// 	TRACE_LOG("BoneInfoMap Entry: {}", pair.first);
+	// }
 }
 
 void Model::Draw()
@@ -89,6 +93,8 @@ void Model::LoadMesh(aiMesh* mesh, const aiScene* scene)
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 
+	
+
 	// Building Vertices - Vertices, Texture, Normals
 	for (size_t i = 0; i < mesh->mNumVertices; i++) {
 
@@ -129,6 +135,8 @@ void Model::LoadMesh(aiMesh* mesh, const aiScene* scene)
 		}
 	}
 
+	
+
 	// Generating Mesh for Model
 	std::shared_ptr<Mesh> newMesh = Mesh::Create(vertices, indices);
 
@@ -149,24 +157,7 @@ void Model::LoadMaterials(const aiScene* scene)
 	auto defaultShader = RESOURCE_MANAGER.GetDefaultShader();
 	auto defaultTexture = RESOURCE_MANAGER.GetDefaultTexture();
 
-	// DEBUG LOOP
-	//for (unsigned int i = 0; i < numOfMat; i++) {
-	//	aiMaterial* material = scene->mMaterials[i];
-	//	aiString matName;
-	//	material->Get(AI_MATKEY_NAME, matName);
-
-	//	// Get material properties
-	//	aiColor3D diffuse(0.0f, 0.0f, 0.0f);
-	//	aiString diffuseTexPath;
-	//	bool hasDiffuseTex = material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseTexPath) == AI_SUCCESS;
-
-	//	TRACE_LOG("Material [{0}] '{1}':", i, matName.C_Str());
-	//	TRACE_LOG("  - Diffuse texture path: {0}", hasDiffuseTex ? diffuseTexPath.C_Str() : "none");
-	//	material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-	//	TRACE_LOG("  - Diffuse color: ({0}, {1}, {2})", diffuse.r, diffuse.g, diffuse.b);
-	//}
-
-
+	
 
 	for (unsigned int i = 0; i < numOfMat; i++) {
 		aiMaterial* material = scene->mMaterials[i];
@@ -188,7 +179,13 @@ void Model::LoadMaterials(const aiScene* scene)
 		props.diffuse = (diffuse.r + diffuse.g + diffuse.b) / 3.0f;
 		props.specular = (specular.r + specular.g + specular.b) / 3.0f;
 		props.shininess = shininess;
-		if (props.shininess < 0.1f) props.shininess = 0.1f; // Set the shininess to , otherwise itll be black.
+
+		// Adjust for low values. - TO DO: allow control in the app and assign a vec3 not a single float to the shader.
+		if (props.shininess < 0.1f) props.shininess = 0.1f; 
+		if (props.ambient < 0.1f) props.ambient = 0.1f; 
+		if (props.diffuse < 0.1f) props.diffuse = 0.1f;
+		if (props.specular < 0.1f) props.specular = 0.1f;
+
 		props.shader = defaultShader; // Give the default shader to start
 
 
@@ -221,7 +218,7 @@ void Model::LoadMaterials(const aiScene* scene)
 			m_ModelPath.substr(m_ModelPath.find_last_of('/') + 1),
 			i);
 
-
+		TRACE_LOG("Creating Material {0}", uniqueName);
 		auto mat = RESOURCE_MANAGER.CreateMaterial(props, uniqueName);
 		m_MaterialList[i] = mat;
 	}
@@ -236,32 +233,21 @@ std::shared_ptr<Texture> Model::LoadTexture(aiTextureType type, const aiScene* s
 {
 	aiString path;
 	if (material->GetTexture(type, 0, &path) == AI_SUCCESS) {
-		// Check if the texture is embedded and not located in a file (i.e some fbx, gbjs etc...)
-		if (path.data[0] == '*') {
-			// Extract index from path, remove the asterisk
-			int textureIndex = std::stoi(path.data + 1);
-
-			// Validate the index exists
-			if (textureIndex < scene->mNumTextures) {
-				aiTexture* texture = scene->mTextures[textureIndex];
+		// First try to find the texture in the scene's embedded textures
+		for (unsigned int i = 0; i < scene->mNumTextures; i++) {
+			if (strcmp(scene->mTextures[i]->mFilename.C_Str(), path.C_Str()) == 0) {
+				aiTexture* texture = scene->mTextures[i];
 				Texture::Specification spec = Texture::GetDefaultSpecification();
 
-				// Check if the texture is a file with compression (PNG/JPG)
+				// If compressed then create as such, else do not
 				if (texture->mHeight == 0) {
-					// Compressed Texture
-					// Height is 0 so compression is active create a spec for this and return
-
-					return std::shared_ptr<Texture>(
-						Texture::Create(texture->mWidth, // Compression means this is the total size
-							1, // Height 1 for compressed images
-							spec,
-							reinterpret_cast<unsigned char*>(texture->pcData))
+					return Texture::LoadFromMemory(
+						reinterpret_cast<unsigned char*>(texture->pcData),
+						texture->mWidth, // Compressed data size in bytes
+						Texture::GetDefaultSpecification()
 					);
-
 				}
 				else {
-					// Uncompressed Texture
-					// Texture from raw pixel data
 					return std::shared_ptr<Texture>(
 						Texture::Create(
 							texture->mWidth,
@@ -273,16 +259,11 @@ std::shared_ptr<Texture> Model::LoadTexture(aiTextureType type, const aiScene* s
 				}
 			}
 		}
-		else {
-			// Extrnal texture file
-			std::string fullPath = directory + "/" + path.data;
 
-			// Unique texture name
-			std::string textureName = m_ModelName + "_" + std::filesystem::path(path.data).filename().string();
-
-			auto tex = RESOURCE_MANAGER.LoadTexture(fullPath, textureName);
-			return tex; 
-		}
+		// Fall back to external file if not found embedded
+		std::string fullPath = directory + "/" + path.data;
+		std::string textureName = m_ModelName + "_" + std::filesystem::path(path.data).filename().string();
+		return RESOURCE_MANAGER.LoadTexture(fullPath, textureName);
 	}
 	return nullptr;
 }

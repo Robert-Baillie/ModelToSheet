@@ -22,39 +22,12 @@
 #include "Core/KeyCodes.h"
 #include "Core/MouseCodes.h"
 
-// Logging
-#include "Core/Log.h"
-
-// Events
-#include "Events/Event.h"
-#include "Events/EventDispatcher.h"
-#include "Events/KeyEvents.h"
-#pragma once
-
-
-// Common Standards we will need
-#include <string>
-#include <bitset>
-#include <functional>
-#include <vector>
-#include <memory>
-#include <unordered_map>
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-
-// Windows Definitions
-#ifdef PLATFORM_WINDOWS
-#include <Windows.h>
-#endif
-
-// Standards
-#include "Core/MacroDefinitions.h"
-#include "Core/KeyCodes.h"
-#include "Core/MouseCodes.h"
+// Input
+#include "Core/Input.h"
 
 // Logging
 #include "Core/Log.h"
+
 
 // Events
 #include "Events/Event.h"
@@ -72,8 +45,11 @@
 // Layer and Stack
 #include "Layers/Layer.h"
 #include "Layers/LayerStack.h"
-#include "Layers/ImGuiLayer.h"
+#include "Layers/UILayer.h"
 #include "Layers/ViewportLayer.h"
 #include "Layers/DockspaceLayer.h"
 
 
+// Helping
+
+#include "Core/Helpers.h"

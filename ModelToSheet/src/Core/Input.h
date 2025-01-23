@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 // This class is a shell.
 // All public methods  call the implementations.
 // Implementations are define in Platform specific Input classes

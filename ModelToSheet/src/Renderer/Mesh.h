@@ -11,7 +11,6 @@ struct Vertex {
     glm::vec2 TexCoords;
 };
 
-
 // Mesh class abstract. Fill in with platform specific renderers
 class Mesh {
 public:

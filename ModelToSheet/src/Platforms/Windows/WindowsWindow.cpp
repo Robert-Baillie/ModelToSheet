@@ -184,6 +184,11 @@ void WindowsWindow::Init(const WindowProps& props)
 
 void WindowsWindow::OnUpdate()
 {
+	double currentTime = glfwGetTime();
+	m_DeltaTime = currentTime - m_LastFrameTime;
+	m_LastFrameTime = currentTime;
+
+
 	glfwPollEvents();
 	m_Context->SwapBuffers();
 }

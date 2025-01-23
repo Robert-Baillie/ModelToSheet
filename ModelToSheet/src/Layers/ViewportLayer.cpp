@@ -1,25 +1,31 @@
 ﻿#include "pch.h"
 #include "ViewportLayer.h"
-#include <glm/gtc/matrix_transform.hpp>
+#include "Core/Application.h"
+#include "Core/Input.h"
 
 #include <string>
 
 #include "imgui.h"
+#include "glm/gtc/matrix_transform.hpp"
 
 ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 {
 	// TEST ( ADD A MODEL)
 	std::string executablePath = std::filesystem::current_path().string();
-	std::string modelPath = executablePath + "/Assets/Models/Anime_character.fbx";
-	m_Model = RESOURCE_MANAGER.LoadModel(modelPath, "Girl");
+	std::string modelPath = executablePath + "/Assets/Models/ModelTest.fbx";
+	m_Model = RESOURCE_MANAGER.LoadModel(modelPath, "Animal");
 
+
+
+	// Set model transform
+	m_ModelTransform = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	// Initialise the cameras
 	m_PerspectiveCamera = std::make_shared<PerspectiveCamera>(45.0f, 1.778f, 0.1f, 1000.0f);
 	m_OrthographicCamera = std::make_shared<OrthographicCamera>(-10.0f, 10.0f, -10.0f, 10.0f);
 
 	// Give the cameras the same starting point. We want this to be synced at all times
-	glm::vec3 startingPos = { 0.0f, 2.0f, 3.0f };
+	glm::vec3 startingPos = { 0.0f, 2.0f, 6.0f };
 	m_PerspectiveCamera->SetPosition(startingPos);
 	m_OrthographicCamera->SetPosition(startingPos);
 
@@ -28,8 +34,10 @@ ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 
 void ViewportLayer::OnAttach()
 {
-	uint32_t width = 1280;
-	uint32_t height = 720;
+	// This should change to getting the window pointer from context and asigining
+	Application& app = Application::Get();
+	uint32_t width = app.GetWindow().GetWidth();
+	uint32_t height = app.GetWindow().GetHeight();
 
 	// Create the frame buffers
 	m_PerspectiveFramebuffer = Framebuffer::Create(width, height);
@@ -50,30 +58,20 @@ void ViewportLayer::OnDetach()
 
 void ViewportLayer::OnUpdate()
 {
+
 	// Get the camera inputs
+	ControlCamera();
 
-	// Rotate Model - TEST
-	m_ModelRotation += 0.5f;
-	if (m_ModelRotation >= 360.0f) {
-		m_ModelRotation -= 360.0f;
-	}
-
-	float angle = m_ModelRotation * 3.14159f / 180.0f;
-	m_ModelTransform = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
 
 	/// Render Perspective View and bind to the framebuffer
 	m_PerspectiveFramebuffer->Bind();
-
 	RenderScene(m_PerspectiveCamera, m_PerspectiveShader);
-
 	m_PerspectiveFramebuffer->Unbind();
 
 
 	// Render OrthograpicView
 	m_OrthographicFramebuffer->Bind();
-
 	RenderScene(m_OrthographicCamera, m_OrthographicShader);
-
 	m_OrthographicFramebuffer->Unbind();
 
 }
@@ -87,9 +85,6 @@ void ViewportLayer::OnImGuiRender()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
 
-	// Set flags, these will be needed to make the two sections fixed in the window
-
-	// Now add your viewport windows
 	ImGuiWindowFlags viewport_flags =
 		ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoResize |
@@ -166,9 +161,50 @@ void ViewportLayer::RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<
 	shader->UploadUniformFloat3("lightPos", camera->GetPosition()); // Default for now;
 	shader->UploadUniformFloat3("viewPos", camera->GetPosition());
 
+
+
+	
 	// Draw the model on this scene if one is active
 	if(m_Model)	m_Model->Draw();
 	
 	Renderer::EndScene();
 
+}
+
+void ViewportLayer::ControlCamera()
+{
+    float mouseX = Input::GetMouseX();
+    float mouseY = Input::GetMouseY();
+    
+    if (isFirstMove)
+    {
+        lastMouseX = mouseX;
+        lastMouseY = mouseY;
+        isFirstMove = false;
+    }
+    
+    // Fix inverted controls
+    float xOffset = (mouseX - lastMouseX) * 0.5f; 
+    float yOffset = (mouseY - lastMouseY) * 0.5f; 
+    
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+    
+    // Update camera rotation (yaw left/right, pitch up/down)
+    m_PerspectiveCamera->SetYaw(m_PerspectiveCamera->GetYaw() + xOffset);
+    m_PerspectiveCamera->SetPitch(m_PerspectiveCamera->GetPitch() + yOffset); 
+    
+    // Movement relative to camera orientation
+    float moveSpeed = m_DeltaTime * m_CameraSpeed;
+    if (Input::IsKeyPressed(KEY_W)) m_PerspectiveCamera->MoveForward(moveSpeed);
+    if (Input::IsKeyPressed(KEY_S)) m_PerspectiveCamera->MoveBackward(moveSpeed);
+    if (Input::IsKeyPressed(KEY_A)) m_PerspectiveCamera->MoveLeft(moveSpeed);
+    if (Input::IsKeyPressed(KEY_D)) m_PerspectiveCamera->MoveRight(moveSpeed);
+    if (Input::IsKeyPressed(KEY_Q)) m_PerspectiveCamera->MoveDown(moveSpeed);
+    if (Input::IsKeyPressed(KEY_E)) m_PerspectiveCamera->MoveUp(moveSpeed);
+    
+    // Sync orthographic camera
+    m_OrthographicCamera->SetPosition(m_PerspectiveCamera->GetPosition());
+    m_OrthographicCamera->SetPitch(m_PerspectiveCamera->GetPitch());
+    m_OrthographicCamera->SetYaw(m_PerspectiveCamera->GetYaw());
 }

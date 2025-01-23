@@ -20,7 +20,7 @@ endif()
 
 # Define the platform options
 if (WIN32)
-	target_compile_definitions(ModelToSheet PRIVATE PLATFORM_WINDOWS)
+	target_compile_definitions(ModelToSheet PRIVATE PLATFORM_WINDOWS PLATFORM_OPENGL)
 endif()
 
 # Target include directories for Librarys, Includes and Other Project Headers

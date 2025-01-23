@@ -74,8 +74,6 @@ void OpenGLFramebuffer::RecalculateFramebuffer()
         std::cout << "Framebuffer Error: " << status << std::endl;
     }
 
-    // Add debug info
-    std::cout << "FBO ID: " << m_RendererID << ", Color Tex ID: " << m_ColorAttachment << std::endl;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

@@ -21,7 +21,8 @@ void Renderer::Submit(const std::shared_ptr<Shader>& shader, const std::shared_p
 {
 	shader->Bind();
 	shader->UploadUniformMat4("u_ViewProjection", camera->GetViewProjectionMatrix());
-	
+
+
 	// Submit into the render command queue
 	vertexArray->Bind();
 	RenderCommand::DrawIndexed(vertexArray);

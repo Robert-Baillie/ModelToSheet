@@ -29,6 +29,23 @@ std::shared_ptr<Texture> Texture::LoadFromFile(const std::string& path, const Sp
     return std::shared_ptr<Texture>(texture);
 }
 
+std::shared_ptr<Texture> Texture::LoadFromMemory(const unsigned char* compressedData, uint32_t dataSize, const Specification& spec)
+{
+    int width, height, channels;
+    unsigned char* decocodedData = stbi_load_from_memory(compressedData, static_cast<int>(dataSize), &width, &height, &channels, 4); //RGBA Behaviour
+
+    if (!decocodedData) {
+        ERROR_LOG("Failed to decode texture from memory");
+        return nullptr;
+    }
+
+    // Create the texture with dataa
+    Texture* texture = Create(width, height, spec, decocodedData);
+    stbi_image_free(decocodedData);
+    return std::shared_ptr<Texture>(texture);
+}
+
+
 Texture* Texture::Create(uint32_t width, uint32_t height, const Specification& spec, unsigned char* data)
 {
 	switch (Renderer::GetAPI())

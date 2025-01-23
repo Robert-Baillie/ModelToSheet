@@ -1,6 +1,7 @@
 #pragma once
+#include "Texture.h"
+#include "Material.h"
 #include "Mesh.h"
-#include "Material.h"=
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -8,6 +9,7 @@
 
 #include <vector>
 #include <string>
+
 
 
 class Model {
@@ -21,7 +23,8 @@ public:
 	void ClearModel();
 
 	inline const std::vector<std::shared_ptr<Material>> GetMaterialList() { return m_MaterialList; }
-	void SetMaterials(const std::vector<std::shared_ptr<Material>>& materials) { m_MaterialList = materials;}
+	void SetMaterials(const std::vector<std::shared_ptr<Material>>& materials) { m_MaterialList = materials; }
+
 private:
 	void LoadNode(aiNode* node, const aiScene* scene);
 	void LoadMesh(aiMesh* mesh, const aiScene* scene);
@@ -29,10 +32,13 @@ private:
 
 	std::shared_ptr<Texture> LoadTexture(aiTextureType flag, const aiScene* scene, const aiMaterial* material, const std::string& directory);
 
+	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
+private:
 	std::string m_ModelName;
 	std::string m_ModelPath;
 	
 	std::vector<std::shared_ptr<Mesh>> m_MeshList;
 	std::vector<std::shared_ptr<Material>> m_MaterialList;
 	std::vector<uint32_t> m_MeshToMat;
+
 };

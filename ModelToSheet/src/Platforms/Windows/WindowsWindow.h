@@ -24,6 +24,8 @@ public:
 	bool IsVSync() const override;
 
 
+	virtual float GetDeltaTime() override { return m_DeltaTime; }
+
 	inline virtual void* GetNativeWindow() const { return m_Window; }
 
 private:
@@ -45,4 +47,7 @@ private:
 	};
 
 	WindowData m_Data;
+
+	float m_LastFrameTime = 0.0f;
+	float m_DeltaTime = 0.0f;
 };

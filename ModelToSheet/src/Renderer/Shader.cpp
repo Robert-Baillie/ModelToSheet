@@ -158,6 +158,17 @@ void Shader::UploadUniformFloat3(const std::string& name, const glm::vec3& vec)
 	glUniform3fv(location, 1, glm::value_ptr(vec));
 }
 
+void Shader::UploadUniformMat4Array(const std::string& name, const std::vector<glm::mat4>& matrices)
+{
+	GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (location == -1)
+	{
+		ERROR_LOG("Uniform {0} not found in shader.", name);
+		return;
+	}
+	glUniformMatrix4fv(location, matrices.size(), GL_FALSE, glm::value_ptr(matrices[0]));
+}
+
 
 
 

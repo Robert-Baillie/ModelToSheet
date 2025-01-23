@@ -13,12 +13,14 @@ OpenGLMesh::OpenGLMesh(const std::vector<Vertex>& vertices,
     std::shared_ptr<VertexBuffer> vertexBuffer = VertexBuffer::Create((float*)vertices.data(), vertices.size() * sizeof(Vertex));
 
     // Set the layout to match Vertex struct and shader locations
+    // Create the basic layout that all meshes have
     BufferLayout layout = {
         { ShaderDataType::Float3, "a_Position" },
         { ShaderDataType::Float3, "a_Normal" },
         { ShaderDataType::Float2, "a_TexCoord" }
     };
 
+  
     vertexBuffer->SetLayout(layout);
     m_VertexArray->AddVertexBuffer(vertexBuffer);
 

@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-
+#include <glm/gtc/matrix_transform.hpp>
 
 class Camera
 {
@@ -8,23 +8,60 @@ public:
 	const glm::vec3& GetPosition() const { return m_Position; }
 	void SetPosition(const glm::vec3& position) { m_Position = position; RecalculateViewMatrix(); }
 
-	float GetRotation() const { return m_Rotation; }
-	void SetRotation(float rotation) { m_Rotation = rotation; RecalculateViewMatrix(); }
+	float GetPitch() const { return m_Pitch; }
+	float GetYaw() const { return m_Yaw; }
 
+	// Camera Rotation
+	void SetPitch(float pitch) {
+		m_Pitch = pitch;
+		RecalculateViewMatrix();
+	}
 
+	void SetYaw(float yaw) {
+		m_Yaw = yaw;
+		RecalculateViewMatrix();
+	}
+
+	// Camera Movement
+	void MoveForward(float deltaTime) { Move(m_Front * m_MoveSpeed * deltaTime); }
+	void MoveBackward(float deltaTime) { Move(-m_Front * m_MoveSpeed * deltaTime); }
+	void MoveRight(float deltaTime) { Move(m_Right * m_MoveSpeed * deltaTime); }
+	void MoveLeft(float deltaTime) { Move(-m_Right * m_MoveSpeed * deltaTime); }
+	void MoveUp(float deltaTime) { Move(m_Up * m_MoveSpeed * deltaTime); }
+	void MoveDown(float deltaTime) { Move(-m_Up * m_MoveSpeed * deltaTime); }
+
+	// For calculations
 	const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
 	const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
 	const glm::mat4& GetViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
 
 protected:
 	virtual void RecalculateViewMatrix() = 0; // To be calculated per Camera Type
+
+	// Simply move by the offset given
+	void Move(const glm::vec3& offset) {
+		// TRACE_LOG("Attempting move: {0}, {1}, {2}", offset.x, offset.y, offset.z);
+		m_Position += offset;
+		RecalculateViewMatrix();
+	}
+
 protected:
 	glm::mat4 m_ProjectionMatrix;
 	glm::mat4 m_ViewMatrix;		
 	glm::mat4 m_ViewProjectionMatrix;
+	
 
-	glm::vec3 m_Position = { 0.0f,0.0f,0.0f };
-	float m_Rotation = 0.0f;
+	glm::vec3 m_Position;
+	glm::vec3 m_Front;
+	glm::vec3 m_Up;
+	glm::vec3 m_Right;
+	glm::vec3 m_WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	float m_Yaw = -90.0f; // Left and Right (rotate y axis)
+	float m_Pitch= 0.0f; // Up and Down (roate x axis)
+
+	float m_MoveSpeed = 5.0f;
+	float m_RotationSpeed =0.1f;
 };
 
 

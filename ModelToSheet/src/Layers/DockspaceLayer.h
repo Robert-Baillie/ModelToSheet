@@ -11,6 +11,9 @@ public:
     virtual ~DockspaceLayer() = default;
 
     virtual void OnImGuiRender() override;
-
+    virtual void OnAttach() override;
+    virtual void OnDetach() override;
+    void Begin();
+    void End();
 
 };

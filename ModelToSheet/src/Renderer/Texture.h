@@ -51,6 +51,7 @@ public:
 	
 	// Static function to load a texture from a file
 	static std::shared_ptr<Texture> LoadFromFile(const std::string& path, const Specification& spec = Specification());
+	static std::shared_ptr<Texture> LoadFromMemory(const unsigned char* compressedData, uint32_t dataSize, const Specification& spec);
 
 	// Helper function to get a default specification. Don't want to have to repeat this code
 	static Specification GetDefaultSpecification() {

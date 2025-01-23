@@ -17,12 +17,20 @@ public:
 
 private:
     void RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<Shader> shader);
+    void ControlCamera();
 
 
 private:
     // Cameras
     std::shared_ptr<PerspectiveCamera> m_PerspectiveCamera;
     std::shared_ptr<OrthographicCamera> m_OrthographicCamera;
+
+    bool isFirstMove = true;
+    float lastMouseX = 0.0f;
+    float lastMouseY = 0.0f;
+
+    float m_CameraSpeed = 5.0f;
+    float m_CameraRotationSpeed = 1.0f;
 
     // Shaders
     std::shared_ptr<Shader> m_PerspectiveShader;
@@ -38,8 +46,12 @@ private:
 
     // Model settings
     std::shared_ptr<Model> m_Model;
-    glm::mat4 m_ModelTransform; 
+    glm::mat4 m_ModelTransform = glm::mat4(1.0f);
     float m_ModelRotation = 0.0f;
     float m_RotationSpeed = 20.0f;
-    float m_DeltaTime = 0.016f;
+
+    // Times
+    float m_DeltaTime= 0.016f;
+    float m_LastFrameTime = 0.0f;
+
 };
