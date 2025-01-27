@@ -5,22 +5,21 @@ layout(location = 2) in vec2 a_TexCoord;
 layout(location = 3) in ivec4 a_BoneIDs;
 layout(location = 4) in vec4 a_Weights;
 
-uniform mat4 u_ViewProjection;  // Combined view and projection matrix
-uniform mat4 u_Transform;       // Model matrix
+uniform mat4 u_ViewProjection;  
+uniform mat4 u_Transform;       
 
-out vec2 v_TexCoord;            // Pass UV coordinates to fragment shader
-out vec3 v_Normal;              // Normal vector in world space
-out vec3 v_FragPos;             // Fragment position in world space
+out vec2 v_TexCoord;           
+out vec3 v_Normal;              
+out vec3 v_FragPos;             
 
-
-const int MAX_BONES = 100;          // Max Bones
-const int MAX_BONE_INFLUENCE = 4;   // Max influence on bones. Has to match our cpp code.
+const int MAX_BONES = 100;          
+const int MAX_BONE_INFLUENCE = 4;   
 uniform mat4 u_BoneTransforms[MAX_BONES];
 
 void main() {
-    // Set standards
-    vec4 totalPosition = vec4(a_Position, 1.0);
+    vec4 totalPosition = vec4(0.0);
     vec3 totalNormal = vec3(0.0);
+    float totalWeight = 0.0;
 
     // Calculate bone transformations
     for(int i = 0; i < MAX_BONE_INFLUENCE; i++) {
@@ -28,22 +27,32 @@ void main() {
             continue;
             
         if(a_BoneIDs[i] >= MAX_BONES) {
-            totalPosition = vec4(a_Position, 1.0);
-            totalNormal = a_Normal;
-            break;
+            // Skip invalid bone IDs
+            continue;
         }
         
-        vec4 localPosition = u_BoneTransforms[a_BoneIDs[i]] * vec4(a_Position, 1.0);
-        totalPosition += localPosition * a_Weights[i];
+        mat4 boneTransform = u_BoneTransforms[a_BoneIDs[i]];
+        vec4 posePosition = boneTransform * vec4(a_Position, 1.0);
+        totalPosition += posePosition * a_Weights[i];
         
-        vec3 localNormal = mat3(u_BoneTransforms[a_BoneIDs[i]]) * a_Normal;
-        totalNormal += localNormal * a_Weights[i];
+        vec3 poseNormal = mat3(boneTransform) * a_Normal;
+        totalNormal += poseNormal * a_Weights[i];
+        
+        totalWeight += a_Weights[i];
     }
 
-   
+    // If no bones influenced this vertex, use original data
+    if(totalWeight == 0.0) {
+        totalPosition = vec4(a_Position, 1.0);
+        totalNormal = a_Normal;
+    }
 
-    gl_Position = u_ViewProjection * u_Transform * totalPosition;
-    v_FragPos = vec3(u_Transform * totalPosition);
+    // Transform to world space
+    vec4 worldPosition = u_Transform * totalPosition;
+    gl_Position = u_ViewProjection * worldPosition;
+    v_FragPos = vec3(worldPosition);
+    
+    // Normal transformation
     v_Normal = normalize(mat3(transpose(inverse(u_Transform))) * totalNormal);
     v_TexCoord = a_TexCoord;
 }
