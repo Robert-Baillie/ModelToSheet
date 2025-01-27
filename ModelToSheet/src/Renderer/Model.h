@@ -2,6 +2,7 @@
 #include "Texture.h"
 #include "Material.h"
 #include "Mesh.h"
+#include "Animation/Bone.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -10,7 +11,7 @@
 #include <vector>
 #include <string>
 
-
+#include "Core/Helpers.h"
 
 class Model {
 public:
@@ -25,6 +26,13 @@ public:
 	inline const std::vector<std::shared_ptr<Material>> GetMaterialList() { return m_MaterialList; }
 	void SetMaterials(const std::vector<std::shared_ptr<Material>>& materials) { m_MaterialList = materials; }
 
+
+
+	inline BoneInfoMap& GetBoneInfoMap() { return m_BoneInfoMap; }
+	inline int& GetBoneCount() { return m_BoneCounter; }
+
+
+
 private:
 	void LoadNode(aiNode* node, const aiScene* scene);
 	void LoadMesh(aiMesh* mesh, const aiScene* scene);
@@ -32,7 +40,11 @@ private:
 
 	std::shared_ptr<Texture> LoadTexture(aiTextureType flag, const aiScene* scene, const aiMaterial* material, const std::string& directory);
 
+
+	void SetVertexBoneDataToDefault(Vertex& vertex);
+	void SetVertexBoneData(Vertex& vertex, int boneID, float weight);
 	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
+
 private:
 	std::string m_ModelName;
 	std::string m_ModelPath;
@@ -40,5 +52,14 @@ private:
 	std::vector<std::shared_ptr<Mesh>> m_MeshList;
 	std::vector<std::shared_ptr<Material>> m_MaterialList;
 	std::vector<uint32_t> m_MeshToMat;
+
+	
+	BoneInfoMap m_BoneInfoMap; 
+	int m_BoneCounter = 0; 
+
+
+    
+
+
 
 };

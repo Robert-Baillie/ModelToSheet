@@ -18,7 +18,7 @@ void Model::LoadModel(const std::string& fileName)
 	/*TRACE_LOG("Attempting to load model from: {0}", fileName);
 	TRACE_LOG("Working directory: {0}", std::filesystem::current_path().string());*/
 
-	const aiScene* scene = importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices  |aiProcess_GlobalScale | aiProcess_LimitBoneWeights);
+	const aiScene* scene = importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals  | aiProcess_GlobalScale);
 
 
 	if (!scene) {
@@ -29,10 +29,6 @@ void Model::LoadModel(const std::string& fileName)
 	TRACE_LOG("This model has {0} animations: ", scene->mNumAnimations);
  	LoadNode(scene->mRootNode, scene); 
 	LoadMaterials(scene);
-
-	// for (const auto& pair : m_BoneInfoMap) {
-	// 	TRACE_LOG("BoneInfoMap Entry: {}", pair.first);
-	// }
 }
 
 void Model::Draw()
@@ -72,6 +68,8 @@ void Model::ClearModel()
 	m_MaterialList.clear();
 }
 
+
+
 void Model::LoadNode(aiNode* node, const aiScene* scene)
 {
 	// For each mesh in the node
@@ -86,24 +84,28 @@ void Model::LoadNode(aiNode* node, const aiScene* scene)
 		LoadNode(node->mChildren[i], scene);
 	}
 }
-
 void Model::LoadMesh(aiMesh* mesh, const aiScene* scene)
 {
-	// Meshes stored as array - convert  to vectors
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 
-	
+	// Initialize bones and weights for each vertex
+	std::vector<glm::ivec4> boneIDs(mesh->mNumVertices, glm::ivec4(-1));
+	std::vector<glm::vec4> weights(mesh->mNumVertices, glm::vec4(0.0f));
 
-	// Building Vertices - Vertices, Texture, Normals
+	TRACE_LOG("Total bones in mesh: {0}", mesh->mNumBones);
+
+	// Building the vertices, textures and normals
 	for (size_t i = 0; i < mesh->mNumVertices; i++) {
-
 		Vertex vertex;
+		
+		SetVertexBoneDataToDefault(vertex);
 
 		// Vertices
 		vertex.Position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 
-		// Texture Coords - if there is one, then add it
+
+		// Tex Coords
 		if (mesh->mTextureCoords[0]) {
 			vertex.TexCoords = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 		}
@@ -118,11 +120,11 @@ void Model::LoadMesh(aiMesh* mesh, const aiScene* scene)
 		else {
 			vertex.Normal = glm::vec3(0.0f, 0.0f, 0.0f);
 		}
-
+		
 		vertices.push_back(vertex);
 	}
-
-	// Building Indices - Faces
+	
+	// indices
 	for (size_t i = 0; i < mesh->mNumFaces; i++) {
 
 		// Add to indices array
@@ -134,17 +136,14 @@ void Model::LoadMesh(aiMesh* mesh, const aiScene* scene)
 			indices.push_back(face.mIndices[j]);
 		}
 	}
-
 	
 
-	// Generating Mesh for Model
-	std::shared_ptr<Mesh> newMesh = Mesh::Create(vertices, indices);
-
-	m_MeshList.push_back(newMesh);
-
-	// Add to Mesh list - ensure textures point correctly
+	// Generate Mesh for the model
+	ExtractBoneWeightForVertices(vertices, mesh, scene);
+	m_MeshList.push_back(Mesh::Create(vertices, indices));
 	m_MeshToMat.push_back(mesh->mMaterialIndex);
 }
+
 
 void Model::LoadMaterials(const aiScene* scene)
 {
@@ -266,4 +265,58 @@ std::shared_ptr<Texture> Model::LoadTexture(aiTextureType type, const aiScene* s
 		return RESOURCE_MANAGER.LoadTexture(fullPath, textureName);
 	}
 	return nullptr;
+}
+
+void Model::SetVertexBoneDataToDefault(Vertex& vertex)
+{
+	for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
+		vertex.BoneIDs[i] = -1;
+		vertex.Weights[i] = 0.0f;
+	}
+}
+
+void Model::SetVertexBoneData(Vertex& vertex, int boneID, float weight)
+{
+	for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
+		if (vertex.BoneIDs[i] < 0) {
+			vertex.Weights[i] = weight;
+			vertex.BoneIDs[i] = boneID;
+			break;
+		}
+	}
+}
+
+void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
+{
+	for (int boneIndex = 0; boneIndex < mesh->mNumBones; boneIndex++) {
+		int boneID = -1;
+		std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+		if (m_BoneInfoMap.find(boneName) == m_BoneInfoMap.end())
+		{
+			BoneInfo newBoneInfo;
+			newBoneInfo.ID = m_BoneCounter;
+			newBoneInfo.OffsetMatrix = Helpers::ConvertMatrixToGLMFormat(
+				mesh->mBones[boneIndex]->mOffsetMatrix);
+			m_BoneInfoMap[boneName] = newBoneInfo;
+			boneID = m_BoneCounter;
+			m_BoneCounter++;
+		}
+		else
+		{
+			boneID = m_BoneInfoMap[boneName].ID;
+		}
+		assert(boneID != -1);
+		auto weights = mesh->mBones[boneIndex]->mWeights;
+		int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+
+		for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
+		{
+			int vertexId = weights[weightIndex].mVertexId;
+			float weight = weights[weightIndex].mWeight;
+			assert(vertexId <= vertices.size());
+			
+
+			SetVertexBoneData(vertices[vertexId], boneID, weight);
+		}
+	}
 }

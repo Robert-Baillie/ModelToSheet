@@ -4,6 +4,8 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Platforms/OpenGL/OpenGLTexture.h"
+
 Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc,  std::string shaderName)
 {
 	m_ShaderName = shaderName;
@@ -167,6 +169,7 @@ void Shader::UploadUniformMat4Array(const std::string& name, const std::vector<g
 		return;
 	}
 	glUniformMatrix4fv(location, matrices.size(), GL_FALSE, glm::value_ptr(matrices[0]));
+
 }
 
 

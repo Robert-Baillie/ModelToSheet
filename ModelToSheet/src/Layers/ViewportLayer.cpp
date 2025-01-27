@@ -10,26 +10,22 @@
 
 ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 {
-	// TEST ( ADD A MODEL)
 	std::string executablePath = std::filesystem::current_path().string();
-	std::string modelPath = executablePath + "/Assets/Models/ModelTest.fbx";
-	m_Model = RESOURCE_MANAGER.LoadModel(modelPath, "Animal");
+	std::string modelPath = executablePath + "/Assets/Models/Test.gltf";
+	m_Model = *RESOURCE_MANAGER.LoadModel(modelPath, "Archer");
+	m_Animation = new Animation(modelPath, &m_Model);
+	m_Animator = new Animator(m_Animation);
 
 
+	// Set model transform to rotate model if needed
+	m_ModelTransform = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-	// Set model transform
-	m_ModelTransform = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	// Initialise the cameras
+	glm::vec3 startingPos = m_ModelTransform[3];
 	m_PerspectiveCamera = std::make_shared<PerspectiveCamera>(45.0f, 1.778f, 0.1f, 1000.0f);
 	m_OrthographicCamera = std::make_shared<OrthographicCamera>(-10.0f, 10.0f, -10.0f, 10.0f);
 
-	// Give the cameras the same starting point. We want this to be synced at all times
-	glm::vec3 startingPos = { 0.0f, 2.0f, 6.0f };
 	m_PerspectiveCamera->SetPosition(startingPos);
 	m_OrthographicCamera->SetPosition(startingPos);
-
-
 }
 
 void ViewportLayer::OnAttach()
@@ -49,6 +45,7 @@ void ViewportLayer::OnAttach()
 	std::filesystem::path vertexPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "Vertex2D.shader";
 	m_OrthographicShader = RESOURCE_MANAGER.LoadShader(vertexPath.string(), fragmentPath.string(), "OrthographicShader");
 	m_PerspectiveShader = RESOURCE_MANAGER.GetDefaultShader();
+
 
 }
 
@@ -73,6 +70,7 @@ void ViewportLayer::OnUpdate()
 	m_OrthographicFramebuffer->Bind();
 	RenderScene(m_OrthographicCamera, m_OrthographicShader);
 	m_OrthographicFramebuffer->Unbind();
+
 
 }
 
@@ -147,7 +145,7 @@ void ViewportLayer::RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<
 {
 
 	// Clear the screen
-	RenderCommand::SetClearColour({ 0.1f, 0.1f, 0.1f, 1.0f });
+	RenderCommand::SetClearColour({ 0.8f, 0.8f, 0.8f, 1.0f });
 	RenderCommand::Clear();
 
 	// Begin scene
@@ -157,16 +155,22 @@ void ViewportLayer::RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<
 	// Update the shader uniforms
 	shader->Bind();
 	shader->UploadUniformMat4("u_ViewProjection", camera->GetViewProjectionMatrix());
-	shader->UploadUniformMat4("u_Transform", m_ModelTransform);
 	shader->UploadUniformFloat3("lightPos", camera->GetPosition()); // Default for now;
 	shader->UploadUniformFloat3("viewPos", camera->GetPosition());
+	shader->UploadUniformMat4("u_Transform", m_ModelTransform);
 
+	if (m_Animator) {
+		m_Animator->UpdateAnimation(0.016f);
+		auto transform = m_Animator->GetFinalBoneMatrices();
+	
 
+		shader->UploadUniformMat4Array("u_BoneTransforms", transform);
+
+		m_Model.Draw();
+	}
 
 	
-	// Draw the model on this scene if one is active
-	if(m_Model)	m_Model->Draw();
-	
+
 	Renderer::EndScene();
 
 }

@@ -57,7 +57,7 @@ protected:
 	glm::vec3 m_Right;
 	glm::vec3 m_WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	float m_Yaw = -90.0f; // Left and Right (rotate y axis)
+	float m_Yaw =  0.0f; // Left and Right (rotate y axis)
 	float m_Pitch= 0.0f; // Up and Down (roate x axis)
 
 	float m_MoveSpeed = 5.0f;

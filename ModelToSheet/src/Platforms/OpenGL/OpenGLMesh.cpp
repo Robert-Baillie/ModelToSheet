@@ -17,7 +17,9 @@ OpenGLMesh::OpenGLMesh(const std::vector<Vertex>& vertices,
     BufferLayout layout = {
         { ShaderDataType::Float3, "a_Position" },
         { ShaderDataType::Float3, "a_Normal" },
-        { ShaderDataType::Float2, "a_TexCoord" }
+        { ShaderDataType::Float2, "a_TexCoord" },
+        { ShaderDataType::Int4,   "a_BoneIDs" },
+        { ShaderDataType::Float4, "a_Weights" }
     };
 
   
