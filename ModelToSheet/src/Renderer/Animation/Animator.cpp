@@ -47,7 +47,7 @@ void Animator::CalculateBoneTransform(const NodeData* node, glm::mat4 parentTran
 
 	glm::mat4 globalTransformation = parentTransform * nodeTransform;
 
-	auto boneInfoMap = m_CurrentAnimation->GetBoneIDMap();
+	auto& boneInfoMap = m_CurrentAnimation->GetBoneIDMap();
 	if (boneInfoMap.find(nodeName) != boneInfoMap.end())
 	{
 

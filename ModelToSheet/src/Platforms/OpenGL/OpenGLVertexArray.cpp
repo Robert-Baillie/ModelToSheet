@@ -47,26 +47,40 @@ void OpenGLVertexArray::Unbind() const
 
 void OpenGLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer)
 {
-	// Check whether this has a layout.
-	ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex buffer has no layout!");
+	 ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex buffer has no layout!");
 
-	glBindVertexArray(m_RendererID);
-	vertexBuffer->Bind();
+    glBindVertexArray(m_RendererID);
+    vertexBuffer->Bind();
 
-	uint32_t index = 0;
-	const auto& layout = vertexBuffer->GetLayout();
-	for (const auto& element : layout) {
-		glEnableVertexAttribArray(index);
-		glVertexAttribPointer(index,
-			element.GetComponentCount(),
-			ShaderDataTypeToOpenGLBaseType(element.Type),
-			element.Normalised ? GL_TRUE : GL_FALSE,
-			layout.GetStride(),
-			(const void*)element.Offset);
-		index++;
-	}
+    uint32_t index = 0;
+    const auto& layout = vertexBuffer->GetLayout();
+    for (const auto& element : layout) {
+        glEnableVertexAttribArray(index);
+        
+        if (element.Type == ShaderDataType::Int || 
+            element.Type == ShaderDataType::Int2 || 
+            element.Type == ShaderDataType::Int3 || 
+            element.Type == ShaderDataType::Int4)
+        {
+            glVertexAttribIPointer(index,
+                element.GetComponentCount(),
+                ShaderDataTypeToOpenGLBaseType(element.Type),
+                layout.GetStride(),
+                (const void*)element.Offset);
+        }
+        else
+        {
+            glVertexAttribPointer(index,
+                element.GetComponentCount(),
+                ShaderDataTypeToOpenGLBaseType(element.Type),
+                element.Normalised ? GL_TRUE : GL_FALSE,
+                layout.GetStride(),
+                (const void*)element.Offset);
+        }
+        index++;
+    }
 
-	m_VertexBuffers.push_back(vertexBuffer);
+    m_VertexBuffers.push_back(vertexBuffer);
 }
 
 void OpenGLVertexArray::SetIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer)

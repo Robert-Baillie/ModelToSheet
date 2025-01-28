@@ -40,7 +40,7 @@ void Animation::ReadMissingBones(const aiAnimation* animation, Model& model)
 	int size = animation->mNumChannels;
 
 	auto& boneInfoMap = model.GetBoneInfoMap();
-	auto boneCount = model.GetBoneCount();
+	int& boneCount = model.GetBoneCount();
 
 	// Loop over the channels
 	for (int i = 0; i < size; i++) {

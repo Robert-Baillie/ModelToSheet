@@ -10,10 +10,10 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
         return;
     }
 
-        // TRACE_LOG("Bone {0} Loading Keyframes:", name);
-        // TRACE_LOG("Position Keyframes: {0}", channel->mNumPositionKeys);
-        // TRACE_LOG("Rotation Keyframes: {0}", channel->mNumRotationKeys);
-        // TRACE_LOG("Scale Keyframes: {0}", channel->mNumScalingKeys);
+         //TRACE_LOG("Bone {0} Loading Keyframes:", name);
+         //TRACE_LOG("Position Keyframes: {0}", channel->mNumPositionKeys);
+         //TRACE_LOG("Rotation Keyframes: {0}", channel->mNumRotationKeys);
+         //TRACE_LOG("Scale Keyframes: {0}", channel->mNumScalingKeys);
 
 
     m_NumPositions = channel->mNumPositionKeys;
@@ -45,8 +45,7 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
         aiVector3D scale = channel->mScalingKeys[keyIndex].mValue;
         float timeStamp = channel->mScalingKeys[keyIndex].mTime;
         KeyScale data;
-        data.Scale = Helpers::GetGLMVec(scale);
-        data.TimeStamp = timeStamp;
+        data.Scale = Helpers::GetGLMVec(scale);        data.TimeStamp = timeStamp;
         m_Scales.push_back(data);
     }
 
@@ -54,10 +53,10 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
 
 void Bone::Update(float animationTime)
 {
-    // TRACE_LOG("Bone: {0}, Animation Time: {1}", m_Name, animTime);
-    // TRACE_LOG("Positions count: {0}", m_Positions.size());
-    // TRACE_LOG("Rotations count: {0}", m_Rotations.size());
-    // TRACE_LOG("Scales count: {0}", m_Scales.size());
+     // TRACE_LOG("Bone: {0}, Animation Time: {1}", m_Name, animationTime);
+     // TRACE_LOG("Positions count: {0}", m_Positions.size());
+     // TRACE_LOG("Rotations count: {0}", m_Rotations.size());
+     // TRACE_LOG("Scales count: {0}", m_Scales.size());
 
     // Interpolate all and pass as local transform
     glm::mat4 translation = InterpolatePosition(animationTime);
