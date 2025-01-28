@@ -18,7 +18,7 @@ void Model::LoadModel(const std::string& fileName)
 	/*TRACE_LOG("Attempting to load model from: {0}", fileName);
 	TRACE_LOG("Working directory: {0}", std::filesystem::current_path().string());*/
 
-	const aiScene* scene = importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals  | aiProcess_GlobalScale);
+	const aiScene* scene = importer.ReadFile(fileName, ASSIMP_IMPORTER_FLAGS);
 
 
 	if (!scene) {
@@ -288,9 +288,13 @@ void Model::SetVertexBoneData(Vertex& vertex, int boneID, float weight)
 
 void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
 {
+	//TRACE_LOG("Processing mesh with {0} bones", mesh->mNumBones);
+
 	for (int boneIndex = 0; boneIndex < mesh->mNumBones; boneIndex++) {
 		int boneID = -1;
 		std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+		//TRACE_LOG("-- Processing bone: {0} (index {1})", boneName, boneIndex);
+
 		if (m_BoneInfoMap.find(boneName) == m_BoneInfoMap.end())
 		{
 			BoneInfo newBoneInfo;
@@ -300,6 +304,10 @@ void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* 
 			m_BoneInfoMap[boneName] = newBoneInfo;
 			boneID = m_BoneCounter;
 			m_BoneCounter++;
+
+			// TRACE_LOG("Bone {0} Offset Matrix: ", boneName);
+			// Helpers::LogMatrix(newBoneInfo.OffsetMatrix);
+
 		}
 		else
 		{
@@ -309,14 +317,35 @@ void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* 
 		auto weights = mesh->mBones[boneIndex]->mWeights;
 		int numWeights = mesh->mBones[boneIndex]->mNumWeights;
 
+		//TRACE_LOG("   Affects {0} vertices", numWeights);
+
+
 		for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
 		{
 			int vertexId = weights[weightIndex].mVertexId;
 			float weight = weights[weightIndex].mWeight;
 			assert(vertexId <= vertices.size());
+
+			//TRACE_LOG("   Vertex {0}: Weight = {1}", vertexId, weight);
 			
 
 			SetVertexBoneData(vertices[vertexId], boneID, weight);
+
+			/*TRACE_LOG("     BoneIDs: [{0}, {1}, {2}, {3}]",
+				vertices[vertexId].BoneIDs.x,
+				vertices[vertexId].BoneIDs.y,
+				vertices[vertexId].BoneIDs.z,
+				vertices[vertexId].BoneIDs.w);
+
+			TRACE_LOG("     Weights: [{0}, {1}, {2}, {3}]",
+				vertices[vertexId].Weights.x,
+				vertices[vertexId].Weights.y,
+				vertices[vertexId].Weights.z,
+				vertices[vertexId].Weights.w);*/
 		}
 	}
+
+
+
+
 }

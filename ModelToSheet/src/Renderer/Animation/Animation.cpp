@@ -5,7 +5,7 @@ Animation::Animation(const std::string& animationPath, Model* model)
 {
 	// Importer to triangulate Mesh Data and chcek it exists
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(animationPath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals  | aiProcess_GlobalScale);
+	const aiScene* scene = importer.ReadFile(animationPath, ASSIMP_IMPORTER_FLAGS);
 
 	ASSERT(scene && scene->mRootNode, "No Scene/Scene RootNode");
 
@@ -27,7 +27,10 @@ Bone* Animation::FindBone(const std::string& name)
 			return bone.GetBoneName() == name;
 		}
 	);
-	if (iter == m_Bones.end()) return nullptr;
+	if (iter == m_Bones.end()) {
+		// WARN_LOG("Bone Not Found: {0}", name);
+		return nullptr;
+	}
 	else return &(*iter);
 }
 
@@ -45,6 +48,7 @@ void Animation::ReadMissingBones(const aiAnimation* animation, Model& model)
 		std::string boneName = channel->mNodeName.data;
 
 		if (boneInfoMap.find(boneName) == boneInfoMap.end()) {
+			TRACE_LOG("Adding new bone {0} with ID {1}", boneName, boneCount);
 			boneInfoMap[boneName].ID = boneCount;
 			boneCount++;
 		}
@@ -55,6 +59,7 @@ void Animation::ReadMissingBones(const aiAnimation* animation, Model& model)
 
 void Animation::ReadHierarchyData(NodeData& dest, const aiNode* src)
 {
+	// TRACE_LOG("Processing node: {0}", src->mName.data);
 	ASSERT(src, "No src in hierarchy data");
 
 	dest.Name = src->mName.data;

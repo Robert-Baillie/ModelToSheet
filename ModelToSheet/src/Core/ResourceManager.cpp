@@ -122,8 +122,8 @@ void ResourceManager::CreateDefaultMaterials()
 
 	// Check that the defualt shader exists
 	if (!m_DefaultShader) {
-		std::filesystem::path vertexPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "Vertex.shader";
-		std::filesystem::path fragmentPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "Fragment.shader";
+		std::filesystem::path vertexPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "DebugVertex.shader";
+		std::filesystem::path fragmentPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "DebugFragment.shader";
 
 
 		m_DefaultShader = Shader::CreateFromFile(vertexPath.string(), fragmentPath.string(), "DefaultShader");

@@ -25,8 +25,8 @@ public:
 	inline int GetTicksPerSecond() { return m_TicksPerSecond; }
 	inline float GetDuration() { return m_Duration; }
 
-	inline const NodeData& GetRootNode() { return m_RootNode; }
-	inline const BoneInfoMap& GetBoneIDMap() { return m_BoneInfoMap; }
+	inline  NodeData& GetRootNode() { return m_RootNode; }
+	inline  BoneInfoMap& GetBoneIDMap() { return m_BoneInfoMap; }
 private:
 	void ReadMissingBones(const aiAnimation* animation, Model& model);
 	void ReadHierarchyData(NodeData& dest, const aiNode* src);

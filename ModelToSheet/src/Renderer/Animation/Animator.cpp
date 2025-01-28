@@ -37,18 +37,25 @@ void Animator::CalculateBoneTransform(const NodeData* node, glm::mat4 parentTran
 
 	if (Bone)
 	{
+		//INFO_LOG("Bone Found: {0}", node->Name);
 		Bone->Update(m_CurrentTime);
 		nodeTransform = Bone->GetLocalTransform();
 	}
+	/*else {
+		WARN_LOG("Bone Not found: {0}", node->Name);
+	}*/
 
 	glm::mat4 globalTransformation = parentTransform * nodeTransform;
 
 	auto boneInfoMap = m_CurrentAnimation->GetBoneIDMap();
 	if (boneInfoMap.find(nodeName) != boneInfoMap.end())
 	{
+
 		int index = boneInfoMap[nodeName].ID;
 		glm::mat4 offset = boneInfoMap[nodeName].OffsetMatrix;
-		m_FinalBoneMatrices[index] = globalTransformation * offset;
+		// m_FinalBoneMatrices[index] = offset * globalTransformation; // FBX Works this way
+		m_FinalBoneMatrices[index] = globalTransformation * offset; // GLTF Works this way
+
 	}
 
 	for (int i = 0; i < node->ChildrenCount; i++) CalculateBoneTransform(&node->Children[i], globalTransformation);

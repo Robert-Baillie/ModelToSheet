@@ -4,12 +4,16 @@
 Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
 	: m_Name(name), m_ID(ID), m_LocalTransform(1.0f)
 {
-    if (!channel) return;
+    if (!channel)
+    {
+        WARN_LOG("Bone {0} has no animation channel!", name);
+        return;
+    }
 
-    // TRACE_LOG("Bone {0} Loading Keyframes:", name);
-    // TRACE_LOG("Position Keyframes: {0}", channel->mNumPositionKeys);
-    // TRACE_LOG("Rotation Keyframes: {0}", channel->mNumRotationKeys);
-    // TRACE_LOG("Scale Keyframes: {0}", channel->mNumScalingKeys);
+        // TRACE_LOG("Bone {0} Loading Keyframes:", name);
+        // TRACE_LOG("Position Keyframes: {0}", channel->mNumPositionKeys);
+        // TRACE_LOG("Rotation Keyframes: {0}", channel->mNumRotationKeys);
+        // TRACE_LOG("Scale Keyframes: {0}", channel->mNumScalingKeys);
 
 
     m_NumPositions = channel->mNumPositionKeys;
@@ -45,6 +49,7 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
         data.TimeStamp = timeStamp;
         m_Scales.push_back(data);
     }
+
 }
 
 void Bone::Update(float animationTime)
@@ -60,7 +65,8 @@ void Bone::Update(float animationTime)
     glm::mat4 scale = InterpolateScaling(animationTime);
     m_LocalTransform = translation * rotation * scale;
 
-   //  Helpers::LogMatrix(rotation, "Rotation matrix");
+   
+     
 }
 
 glm::mat4 Bone::InterpolatePosition(float animationTime)

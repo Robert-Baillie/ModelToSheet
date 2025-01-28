@@ -15,7 +15,7 @@ out vec3 v_FragPos;
 const int MAX_BONES = 100;          
 const int MAX_BONE_INFLUENCE = 4;   
 uniform mat4 u_BoneTransforms[MAX_BONES];
-
+out vec4 v_DebugColor; // Pass to the fragment shader
 
 void main() {
     vec4 totalPosition = vec4(0.0);
@@ -23,37 +23,34 @@ void main() {
     float totalWeight = 0.0;
 
     // Calculate bone transformations
-    for(int i = 0; i < MAX_BONE_INFLUENCE; i++) {
-        if(a_BoneIDs[i] == -1) 
+    for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
+        if (a_BoneIDs[i] == -1) 
             continue;
-            
-        if(a_BoneIDs[i] >= MAX_BONES) {
-            // Skip invalid bone IDs
+
+        if (a_BoneIDs[i] >= MAX_BONES) 
             continue;
-        }
-        
+
         mat4 boneTransform = u_BoneTransforms[a_BoneIDs[i]];
         vec4 posePosition = boneTransform * vec4(a_Position, 1.0);
         totalPosition += posePosition * a_Weights[i];
-        
         vec3 poseNormal = mat3(boneTransform) * a_Normal;
         totalNormal += poseNormal * a_Weights[i];
-        
         totalWeight += a_Weights[i];
     }
 
-    // If no bones influenced this vertex, use original data
-    if(totalWeight == 0.0) {
+    // Check for totalWeight == 0.0
+    if (totalWeight == 0.0) {
         totalPosition = vec4(a_Position, 1.0);
         totalNormal = a_Normal;
+        v_DebugColor = vec4(1.0, 0.0, 0.0, 1.0); // Red indicates totalWeight == 0
+    } else {
+        v_DebugColor = vec4(0.0, 1.0, 0.0, 1.0); // Green indicates normal case
     }
 
     // Transform to world space
     vec4 worldPosition = u_Transform * totalPosition;
     gl_Position = u_ViewProjection * worldPosition;
     v_FragPos = vec3(worldPosition);
-    
-    // Normal transformation
     v_Normal = normalize(mat3(transpose(inverse(u_Transform))) * totalNormal);
     v_TexCoord = a_TexCoord;
 }

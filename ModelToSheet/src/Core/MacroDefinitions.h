@@ -58,4 +58,4 @@
 /* Animations */
 #define MAX_BONE_INFLUENCE 4
 #define MAX_BONES 100
-
+#define ASSIMP_IMPORTER_FLAGS aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_GlobalScale |  aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder

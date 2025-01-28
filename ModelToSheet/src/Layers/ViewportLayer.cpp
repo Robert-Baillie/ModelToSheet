@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "glm/gtc/matrix_transform.hpp"
 
+
 ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 {
 	std::string executablePath = std::filesystem::current_path().string();
@@ -17,8 +18,7 @@ ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 	m_Animator = new Animator(m_Animation);
 
 
-	// Set model transform to rotate model if needed
-	m_ModelTransform = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	m_ModelTransform = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	glm::vec3 startingPos = m_ModelTransform[3];
 	m_PerspectiveCamera = std::make_shared<PerspectiveCamera>(45.0f, 1.778f, 0.1f, 1000.0f);
@@ -158,6 +158,8 @@ void ViewportLayer::RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<
 	shader->UploadUniformFloat3("lightPos", camera->GetPosition()); // Default for now;
 	shader->UploadUniformFloat3("viewPos", camera->GetPosition());
 	shader->UploadUniformMat4("u_Transform", m_ModelTransform);
+
+
 
 	if (m_Animator) {
 		m_Animator->UpdateAnimation(0.016f);
