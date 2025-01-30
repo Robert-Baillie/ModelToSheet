@@ -11,17 +11,27 @@ file(GLOB IMGUI_SOURCES "include/imgui/*.cpp" "include/imgui/*.h"
 message("Source files: ${SOURCE_FILES} ${IMGUI_SOURCES}")
 
 
-# Add source and imgui to this project's executable.
-add_executable (ModelToSheet ${SOURCE_FILES} ${IMGUI_SOURCES})
 
+# Define the platform options
+if (WIN32)
+	# Add source and imgui to this project's executable.
+	add_executable (ModelToSheet WIN32 ${SOURCE_FILES} ${IMGUI_SOURCES})
+	target_compile_definitions(ModelToSheet PRIVATE PLATFORM_WINDOWS PLATFORM_OPENGL)
+else()
+    add_executable(ModelToSheet ${SOURCE_FILES} ${IMGUI_SOURCES})
+endif()
+
+
+if(MSVC)
+    target_link_options(ModelToSheet PRIVATE "/ENTRY:mainCRTStartup")
+endif()
+
+
+# Set Cpp Standard
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ModelToSheet PROPERTY CXX_STANDARD 20)
 endif()
 
-# Define the platform options
-if (WIN32)
-	target_compile_definitions(ModelToSheet PRIVATE PLATFORM_WINDOWS PLATFORM_OPENGL)
-endif()
 
 # Target include directories for Librarys, Includes and Other Project Headers
 target_include_directories(ModelToSheet PRIVATE	src 

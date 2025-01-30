@@ -25,22 +25,22 @@
 // Define error (...) passing in undetermined variables. When we do we want to call the core logger __VA_ARGS__ passing in the (...) from before
 #define TRACE_LOG(...) do { \
     ::Log::Get().GetLogger()->trace(__VA_ARGS__); \
-    ::Log::Get().Push(__VA_ARGS__); \
+    ::Log::Get().Push(Log::Level::Trace, __VA_ARGS__); \
 } while(0)
 
 #define INFO_LOG(...) do { \
     ::Log::Get().GetLogger()->info(__VA_ARGS__); \
-    ::Log::Get().Push(__VA_ARGS__); \
+    ::Log::Get().Push(Log::Level::Info, __VA_ARGS__); \
 } while(0)
 
 #define WARN_LOG(...) do { \
     ::Log::Get().GetLogger()->warn(__VA_ARGS__); \
-    ::Log::Get().Push(__VA_ARGS__); \
+    ::Log::Get().Push(Log::Level::Warn, __VA_ARGS__); \
 } while(0)
 
 #define ERROR_LOG(...) do { \
     ::Log::Get().GetLogger()->error(__VA_ARGS__); \
-    ::Log::Get().Push(__VA_ARGS__); \
+    ::Log::Get().Push(Log::Level::Error, __VA_ARGS__); \
 } while(0)
 
 

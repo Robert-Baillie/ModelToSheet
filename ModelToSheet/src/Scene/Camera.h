@@ -5,6 +5,13 @@
 class Camera
 {
 public:
+	enum class Type {
+		Perspective,
+		Orthographic
+	};
+
+	const Type GetCameraType() { return m_CameraType; }
+
 	const glm::vec3& GetPosition() const { return m_Position; }
 	void SetPosition(const glm::vec3& position) { m_Position = position; RecalculateViewMatrix(); }
 
@@ -46,6 +53,8 @@ protected:
 	}
 
 protected:
+	Type m_CameraType;
+
 	glm::mat4 m_ProjectionMatrix;
 	glm::mat4 m_ViewMatrix;		
 	glm::mat4 m_ViewProjectionMatrix;

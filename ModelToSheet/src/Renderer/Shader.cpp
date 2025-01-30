@@ -133,6 +133,18 @@ void Shader::Unbind() const
 	glUseProgram(0);
 }
 
+void Shader::UploadUniformFloat(const std::string& name, float value)
+{
+	GLint location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (location == -1)
+	{
+		ERROR_LOG("Uniform {0} not found in shader.", name);
+		return;
+	}
+
+	glUniform1f(location, value);  
+}
+
 void Shader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix)
 {
 	// Upload mat4 into shader

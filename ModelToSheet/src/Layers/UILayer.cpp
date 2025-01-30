@@ -56,14 +56,7 @@ void UILayer::OnImGuiRender()
                 ImGui::EndTabItem();
             }
 
-            // Tab 2: Second component
-            if (ImGui::BeginTabItem("Component 2"))
-            {
-                ImGui::Text("This is Component 2");
-                ImGui::Button("Button 2");
-                ImGui::EndTabItem();
-            }
-
+            RenderLoggingTab();
             ImGui::EndTabBar();
         }
 
@@ -82,5 +75,43 @@ void UILayer::OnImGuiRender()
           
 
         ImGui::End();
+    }
+}
+
+// Render what the logger receives.
+void UILayer::RenderLoggingTab()
+{
+    if (ImGui::BeginTabItem("Log")) {
+
+        // If the button to clear has been pressed, then clear the logger.
+        if (ImGui::Button("Clear Logs")) {
+            Log::Get().ClearLogs();
+        }
+
+        ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);// Create a scrollable area for the logs.
+
+        // Display all logs, switch the colour formating based on the level of the log.
+        for (const auto& log : Log::Get().GetLogs()) {
+            switch (log.level) {
+            case Log::Level::Error:
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red
+                break;
+            case Log::Level::Warn:
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.0f, 1.0f)); // Yellow
+                break;
+            case Log::Level::Info:
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f, 0.75f, 0.0f, 1.0f)); // Green
+                break;
+            case Log::Level::Trace:
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Grey
+                break;
+            }
+            ImGui::TextUnformatted(log.message.c_str());
+            ImGui::PopStyleColor();
+        }
+        ImGui::EndChild();
+
+
+        ImGui::EndTabItem();
     }
 }

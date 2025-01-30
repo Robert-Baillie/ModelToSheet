@@ -5,23 +5,26 @@
 
 OrthographicCamera::OrthographicCamera(float left, float right, float bottom, float top)
 {
-	m_ProjectionMatrix = glm::ortho(left, right, bottom, top, -1.0f, 1.0f);
+	m_CameraType = Type::Orthographic;
+	m_ProjectionMatrix = glm::ortho(left, right, bottom, top, -100.0f, 100.0f);
 	RecalculateViewMatrix();
 }
 
 
 void OrthographicCamera::RecalculateViewMatrix()
 {
-	// Calculate camera direction vectors
-	float yawRadians = glm::radians(m_Yaw);
-	float pitchRadians = glm::radians(m_Pitch);
+	m_Pitch = glm::clamp(m_Pitch, -89.0f, 89.0f);
 
-	m_Front = glm::normalize(glm::vec3(
-		sin(yawRadians) * cos(pitchRadians),
-		-sin(pitchRadians),
-		cos(yawRadians) * cos(pitchRadians)
-	));
+	// Calculate direction vector
+	float pitchRad = glm::radians(m_Pitch);
+	float yawRad = glm::radians(m_Yaw);
 
+	glm::vec3 direction;
+	direction.x = cos(yawRad) * cos(pitchRad);
+	direction.y = sin(pitchRad);
+	direction.z = sin(yawRad) * cos(pitchRad);
+
+	m_Front = glm::normalize(direction);
 	m_Right = glm::normalize(glm::cross(m_Front, m_WorldUp));
 	m_Up = glm::normalize(glm::cross(m_Right, m_Front));
 
@@ -32,6 +35,8 @@ void OrthographicCamera::RecalculateViewMatrix()
 PerspectiveCamera::PerspectiveCamera(float fov, float aspectRatio, float nearClip, float farClip)
 	: m_FOV(fov), m_AspectRatio(aspectRatio), m_NearClip(nearClip), m_FarClip(farClip)
 {
+	m_CameraType = Type::Perspective;
+
 	m_Pitch = 0.0f;   
 	m_Yaw = -90.0f;    
 
@@ -53,10 +58,11 @@ void PerspectiveCamera::RecalculateViewMatrix()
 
 	m_Pitch = glm::clamp(m_Pitch, -89.0f, 89.0f);
 
-	glm::vec3 direction;
+	// Calculate direction vector
 	float pitchRad = glm::radians(m_Pitch);
 	float yawRad = glm::radians(m_Yaw);
 
+	glm::vec3 direction;
 	direction.x = cos(yawRad) * cos(pitchRad);
 	direction.y = sin(pitchRad);
 	direction.z = sin(yawRad) * cos(pitchRad);

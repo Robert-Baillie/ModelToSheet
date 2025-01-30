@@ -13,6 +13,7 @@
 
 #include "Core/Helpers.h"
 
+
 class Model {
 public:
 	Model() = default;
@@ -20,7 +21,7 @@ public:
 	~Model() { ClearModel(); }
 
 	void LoadModel(const std::string& fileName);
-	void Draw();
+	void Draw(FragmentShaderType shaderType, std::shared_ptr<Shader> shader);
 	void ClearModel();
 
 	inline const std::vector<std::shared_ptr<Material>> GetMaterialList() { return m_MaterialList; }
@@ -39,6 +40,7 @@ private:
 	void LoadMaterials(const aiScene* scene);
 
 	std::shared_ptr<Texture> LoadTexture(aiTextureType flag, const aiScene* scene, const aiMaterial* material, const std::string& directory);
+	std::shared_ptr<Texture> LoadTextureFromEmbedded(const aiTexture* texture);
 
 
 	void SetVertexBoneDataToDefault(Vertex& vertex);

@@ -17,7 +17,11 @@ Application::Application() {
 	srand(static_cast<unsigned int>(time(0)));
 
 	// Create the window
-	m_Window = std::unique_ptr<Window>(Window::Create());
+	WindowProps props;
+	props.Title = "Model To Sheet";
+	props.Fullscreen = true;
+
+	m_Window = std::unique_ptr<Window>(Window::Create(props));
 	
 	// Bind Application on event.
 	 m_Window->SetEventCallback(BIND_EVENT_FN(Application::OnEvent));

@@ -13,3 +13,5 @@ void Log::Init()
 	s_AppLogger = spdlog::stdout_color_mt("ModelToSheet");
 	s_AppLogger->set_level(spdlog::level::trace);
 }
+
+

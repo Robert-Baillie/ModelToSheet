@@ -4,6 +4,15 @@
 #include <glm/glm.hpp>
 
 
+
+enum class FragmentShaderType {
+	Diffuse,
+	Normal,
+	Specular,
+	All
+};
+
+
 class Shader 
 {
 public:
@@ -13,6 +22,7 @@ public:
 	void Bind() const;
 	void Unbind() const;
 
+	void UploadUniformFloat(const std::string& name, float value);
 	void UploadUniformMat4(const std::string& name, const glm::mat4& matrix);
 	void UploadUniformFloat3(const std::string& name, const glm::vec3& vec);
 	void UploadUniformMat4Array(const std::string& name, const std::vector<glm::mat4>& matrices);

@@ -50,8 +50,13 @@ void WindowsWindow::Init(const WindowProps& props)
 
 	}
 
-	m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+	// True fullscreen below.
+		/// GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+		/// const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+		/// m_Window = glfwCreateWindow(mode->width, mode->height, m_Data.Title.c_str(), primaryMonitor, nullptr);
 
+	m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+	if(props.Fullscreen) glfwMaximizeWindow(m_Window);
 
 	// Create GL Context
 	 m_Context = new OpenGLContext(m_Window);

@@ -5,6 +5,7 @@
 #include "Renderer/Framebuffer.h"
 #include "Renderer/Animation/Animator.h"
 
+
 // A Layer which holds the framebuffer data for both the 3D scene and 2D scene.
 class ViewportLayer : public Layer {
 public:
@@ -60,6 +61,12 @@ private:
     // Times
     float m_DeltaTime= 0.016f;
     float m_LastFrameTime = 0.0f;
+
+
+    
+
+    // Flow control
+    FragmentShaderType m_CurrentFragmentShaderType = FragmentShaderType::Diffuse;
 
   
 };

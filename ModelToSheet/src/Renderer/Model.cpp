@@ -31,8 +31,9 @@ void Model::LoadModel(const std::string& fileName)
 	LoadMaterials(scene);
 }
 
-void Model::Draw()
+void Model::Draw(FragmentShaderType shaderType, std::shared_ptr<Shader> shader)
 {
+	shader->Bind();
 	// Simple iteration through all the meshes and their material index and rendering both.
 	for (size_t i = 0; i < m_MeshList.size(); i++) {
 		// Get the material index
@@ -40,17 +41,40 @@ void Model::Draw()
 
 		// Check the texture is available
 		if (matIndex < m_MaterialList.size() && m_MaterialList[matIndex] != nullptr) {
-			// Get the shader from the current material
-			const MaterialProperties& props = m_MaterialList[matIndex]->GetProperties();
-
-			// Assuming your shader has these uniform locations - you'll need to get these from your shader
-			uint32_t specularLocation = props.shader->GetUniformLocation("material.specularStrength");
-			uint32_t shininessLocation = props.shader->GetUniformLocation("material.shininess");
-			uint32_t diffuseLocation = props.shader->GetUniformLocation("material.diffuseStrength");
-			uint32_t ambientLocation = props.shader->GetUniformLocation("material.ambientStrength");
-
 			// Use the material (this will bind textures and set uniforms)
-			m_MaterialList[matIndex]->UseMaterial(ambientLocation, diffuseLocation, specularLocation, shininessLocation);
+			uint32_t specularLocation = shader->GetUniformLocation("material.specularStrength");
+			uint32_t shininessLocation = shader->GetUniformLocation("material.shininess");
+			uint32_t diffuseLocation = shader->GetUniformLocation("material.diffuseStrength");
+			uint32_t ambientLocation = shader->GetUniformLocation("material.ambientStrength");
+
+
+			switch (shaderType) {
+				// Normal only needs diffuse map
+			case FragmentShaderType::Normal:
+				break;
+
+				// Diffuse only needs its diffuse location
+			case FragmentShaderType::Diffuse:
+				diffuseLocation = shader->GetUniformLocation("material.diffuseStrength");
+				break;
+
+				// Specular needs specular map and the shinines and diffuse map.
+			case FragmentShaderType::Specular:
+				specularLocation = shader->GetUniformLocation("material.specularStrength");
+				shininessLocation = shader->GetUniformLocation("material.shininess");
+				break;
+
+				// All needs all, ofc
+			case FragmentShaderType::All:
+				ambientLocation = shader->GetUniformLocation("material.ambientStrength");
+				diffuseLocation = shader->GetUniformLocation("material.diffuseStrength");
+				specularLocation = shader->GetUniformLocation("material.specularStrength");
+				shininessLocation = shader->GetUniformLocation("material.shininess");
+				break;
+
+			}
+			// Basically just applying properties to the correct shader
+			m_MaterialList[matIndex]->UseMaterial(shaderType, ambientLocation, diffuseLocation, specularLocation, shininessLocation);
 		}
 		m_MeshList[i]->Draw();
 	}
@@ -231,40 +255,60 @@ void Model::LoadMaterials(const aiScene* scene)
 std::shared_ptr<Texture> Model::LoadTexture(aiTextureType type, const aiScene* scene, const aiMaterial* material, const std::string& directory)
 {
 	aiString path;
-	if (material->GetTexture(type, 0, &path) == AI_SUCCESS) {
-		// First try to find the texture in the scene's embedded textures
-		for (unsigned int i = 0; i < scene->mNumTextures; i++) {
-			if (strcmp(scene->mTextures[i]->mFilename.C_Str(), path.C_Str()) == 0) {
-				aiTexture* texture = scene->mTextures[i];
-				Texture::Specification spec = Texture::GetDefaultSpecification();
+	
+	// Check if the texture even loads
+	if (material->GetTexture(type, 0, &path) != AI_SUCCESS) {
+		ERROR_LOG("There is not Texture in this material.");
+		return nullptr;
+	}
 
-				// If compressed then create as such, else do not
-				if (texture->mHeight == 0) {
-					return Texture::LoadFromMemory(
-						reinterpret_cast<unsigned char*>(texture->pcData),
-						texture->mWidth, // Compressed data size in bytes
-						Texture::GetDefaultSpecification()
-					);
-				}
-				else {
-					return std::shared_ptr<Texture>(
-						Texture::Create(
-							texture->mWidth,
-							texture->mHeight,
-							spec,
-							reinterpret_cast<unsigned char*>(texture->pcData)
-						)
-					);
-				}
+	// First try to find the texture in the scene's embedded textures
+	for (unsigned int i = 0; i < scene->mNumTextures; i++) {
+		aiTexture* texture = scene->mTextures[i];
+
+		// 1: Path starts with *
+		if (path.C_Str()[0] == '*') {
+			// Check the index matches the loop index
+			int texIndex = std::atoi(path.C_Str() + 1);
+			if (texIndex == i) {
+				return LoadTextureFromEmbedded(texture);
 			}
 		}
+		// Case 2: Check if filename matches
+		else if (strcmp(texture->mFilename.C_Str(), path.C_Str()) == 0) {
+			return LoadTextureFromEmbedded(texture);
+		}
+	}
 
 		// Fall back to external file if not found embedded
 		std::string fullPath = directory + "/" + path.data;
 		std::string textureName = m_ModelName + "_" + std::filesystem::path(path.data).filename().string();
 		return RESOURCE_MANAGER.LoadTexture(fullPath, textureName);
+
+}
+
+std::shared_ptr<Texture> Model::LoadTextureFromEmbedded(const aiTexture* texture)
+{
+	Texture::Specification spec = Texture::GetDefaultSpecification();
+
+	// If compressed then create as such, else do not
+	if (texture->mHeight == 0) {
+		return Texture::LoadFromMemory(
+			reinterpret_cast<unsigned char*>(texture->pcData),
+			texture->mWidth, // Compressed data size in bytes
+			Texture::GetDefaultSpecification()
+		);
 	}
-	return nullptr;
+	
+	return std::shared_ptr<Texture>(
+		Texture::Create(
+			texture->mWidth,
+			texture->mHeight,
+			spec,
+			reinterpret_cast<unsigned char*>(texture->pcData)
+		)
+	);
+	
 }
 
 void Model::SetVertexBoneDataToDefault(Vertex& vertex)

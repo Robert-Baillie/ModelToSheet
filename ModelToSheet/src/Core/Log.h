@@ -8,6 +8,19 @@
 class Log
 {
 public:
+	enum class Level {
+		Info,
+		Warn,
+		Error,
+		Trace
+	};
+
+	struct LogMessage {
+		Level level;
+		std::string message;
+	};
+
+
 	static Log& Get() {
 		static Log instance;
 		return instance;
@@ -16,11 +29,12 @@ public:
 	inline static std::shared_ptr<spdlog::logger>& GetLogger() { return s_AppLogger; }
 
 	template<typename... Args>
-	void Push(const std::string& fmt, Args&&... args) {
+	void Push(Level level, const std::string& fmt, Args&&... args) {
 		// std::lock_guard<std::mutex> lock(m_LogMutex); // For THread safety. Only single threaded so no need.
-		m_Logs.emplace_back(fmt::format(fmt::runtime(fmt), std::forward<Args>(args)...));
+		m_Logs.push_back({ level, fmt::format(fmt::runtime(fmt), std::forward<Args>(args)...) });
 	}
-	const std::vector<std::string>& GetLogs() const { return m_Logs; }
+	const std::vector<LogMessage>& GetLogs() const { return m_Logs; }
+	void ClearLogs() { m_Logs.clear(); }
 
 
 private:
@@ -30,7 +44,7 @@ private:
 	static std::shared_ptr<spdlog::logger> s_AppLogger;
 
 private:
-	std::vector<std::string> m_Logs;
+	std::vector<LogMessage> m_Logs;
 };
 
 

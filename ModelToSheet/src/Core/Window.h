@@ -8,11 +8,13 @@ struct WindowProps {
 	std::string Title;
 	unsigned int Width;
 	unsigned int Height;
+	bool Fullscreen;
 
 	WindowProps(const std::string& title = "Model To Sheet",
 		unsigned int width = 1280,
-		unsigned int height = 720)
-		: Title(title), Width(width), Height(height) {}
+		unsigned int height = 720,
+		bool fullscreen = false)
+		: Title(title), Width(width), Height(height), Fullscreen(fullscreen) {}
 };
 
 class Window {

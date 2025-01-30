@@ -12,8 +12,8 @@
 ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 {
 	std::string executablePath = std::filesystem::current_path().string();
-	std::string modelPath = executablePath + "/Assets/Models/Test.gltf";
-	m_Model = *RESOURCE_MANAGER.LoadModel(modelPath, "Archer");
+	std::string modelPath = executablePath + "/Assets/Models/Test.fbx";
+	m_Model = *RESOURCE_MANAGER.LoadModel(modelPath, "Weird Creacher");
 	m_Animation = new Animation(modelPath, &m_Model);
 	m_Animator = new Animator(m_Animation);
 
@@ -22,7 +22,7 @@ ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 
 	glm::vec3 startingPos = m_ModelTransform[3];
 	m_PerspectiveCamera = std::make_shared<PerspectiveCamera>(45.0f, 1.778f, 0.1f, 1000.0f);
-	m_OrthographicCamera = std::make_shared<OrthographicCamera>(-10.0f, 10.0f, -10.0f, 10.0f);
+	m_OrthographicCamera = std::make_shared<OrthographicCamera>(-1.0f, 1.0f, -1.0f, 1.0f);
 
 	m_PerspectiveCamera->SetPosition(startingPos);
 	m_OrthographicCamera->SetPosition(startingPos);
@@ -41,8 +41,8 @@ void ViewportLayer::OnAttach()
 
 	// Set the shaders
 	std::filesystem::path currentPath = std::filesystem::path(__FILE__).parent_path();
-	std::filesystem::path fragmentPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "Fragment2D.shader";
-	std::filesystem::path vertexPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "Vertex2D.shader";
+	std::filesystem::path fragmentPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "DiffuseF.shader";
+	std::filesystem::path vertexPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "Vertex.shader";
 	m_OrthographicShader = RESOURCE_MANAGER.LoadShader(vertexPath.string(), fragmentPath.string(), "OrthographicShader");
 	m_PerspectiveShader = RESOURCE_MANAGER.GetDefaultShader();
 
@@ -119,7 +119,7 @@ void ViewportLayer::OnImGuiRender()
 	ImGui::End();
 
 
-	// Orthographic - basically as above - bottom right
+	// Orthographic - position as above - bottom right
 	ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + twoThirdsWidth, viewport->WorkPos.y + twoThirdsHeight));
 	ImGui::SetNextWindowSize(ImVec2(oneThirdWidth, oneThirdsHeight));
 	ImGui::Begin("2D View (Orthographic)", nullptr, viewport_flags);
@@ -143,7 +143,7 @@ void ViewportLayer::OnImGuiRender()
 
 void ViewportLayer::RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<Shader> shader)
 {
-
+	
 	// Clear the screen
 	RenderCommand::SetClearColour({ 0.8f, 0.8f, 0.8f, 1.0f });
 	RenderCommand::Clear();
@@ -152,23 +152,39 @@ void ViewportLayer::RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<
 	Renderer::BeginScene(); // Currently calls nothing
 
 
-	// Update the shader uniforms
+	// Update the shader uniforms based on the current fragment shader and camera type.
 	shader->Bind();
-	shader->UploadUniformMat4("u_ViewProjection", camera->GetViewProjectionMatrix());
-	shader->UploadUniformFloat3("lightPos", camera->GetPosition()); // Default for now;
-	shader->UploadUniformFloat3("viewPos", camera->GetPosition());
+
+	// ViewProjection active on Vertex for all
+	shader->UploadUniformMat4("u_ViewProjection", camera->GetViewProjectionMatrix()); 
+	
+	// Light Position only in Fragment on Perspective
+	if(camera->GetCameraType() == Camera::Type::Perspective) shader->UploadUniformFloat3("lightPos", camera->GetPosition()); // Default for now;
+
+	// View Pos currently only in Fragment on Perspective
+	if (camera->GetCameraType() == Camera::Type::Perspective)shader->UploadUniformFloat3("viewPos", camera->GetPosition());
+
+	// Transform in Vertex for all.
 	shader->UploadUniformMat4("u_Transform", m_ModelTransform);
 
 
+	
+	
 
 	if (m_Animator) {
 		m_Animator->UpdateAnimation(0.016f);
 		auto transform = m_Animator->GetFinalBoneMatrices();
 	
-
+		// Bone Transform in vertex for all.
 		shader->UploadUniformMat4Array("u_BoneTransforms", transform);
 
-		m_Model.Draw();
+		// Draw based on Camera.
+		if (camera->GetCameraType() == Camera::Type::Perspective) m_Model.Draw(FragmentShaderType::All, shader);
+		else {
+			// Pixel Size in the Orthographic Fragment Shader
+			shader->UploadUniformFloat("u_PixelSize",0.0125f); // Pixel size of 0.0125 looks okay Create a slider to adjust this.
+			m_Model.Draw(m_CurrentFragmentShaderType, shader);
+		}
 	}
 
 	

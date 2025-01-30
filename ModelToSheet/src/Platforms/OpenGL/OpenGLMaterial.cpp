@@ -14,19 +14,11 @@ OpenGLMaterial::~OpenGLMaterial()
 	m_Properties.specularMap = nullptr;
 }
 
-void OpenGLMaterial::UseMaterial(uint32_t ambientStrengthLocation, uint32_t diffuseStrengthLocation, uint32_t specularStrengthLocation, uint32_t shininessLocation) const
+void OpenGLMaterial::UseMaterial(FragmentShaderType shaderType, uint32_t ambientStrengthLocation, uint32_t diffuseStrengthLocation, uint32_t specularStrengthLocation, uint32_t shininessLocation) const
 {
-	// Bind the shader if we have set it, otherwise it will use default (or whatever is loaded)
-	if (m_Properties.shader) {
-		m_Properties.shader->Bind(); 
-	}
-
-	glUniform1f(ambientStrengthLocation, m_Properties.ambient);
-	glUniform1f(diffuseStrengthLocation, m_Properties.diffuse);
-	glUniform1f(specularStrengthLocation, m_Properties.specular);
-	glUniform1f(shininessLocation, m_Properties.shininess);
 	
 
+	// Bind Diffuse map for all
 	if (m_Properties.diffuseMap) {
 		// TRACE_LOG("Diffuse active");
 		glActiveTexture(GL_TEXTURE0);
@@ -34,10 +26,41 @@ void OpenGLMaterial::UseMaterial(uint32_t ambientStrengthLocation, uint32_t diff
 
 	}
 
-	if (m_Properties.specularMap) {
-		// TRACE_LOG("UniformLocation Spec: {0}", specularLocation);
-		glActiveTexture(GL_TEXTURE1);
-		m_Properties.specularMap->Bind();
+	// As above in the previous
+	switch (shaderType) {
+		// Normal only needs diffuse map
+		case FragmentShaderType::Normal:
+			break;
+
+		// Diffuse only needs its diffuse location, and to bind the diffuse map (already done)
+		case FragmentShaderType::Diffuse:
+			glUniform1f(diffuseStrengthLocation, m_Properties.diffuse);
+			break;
+
+		// Specular needs specular map and the shinines and diffuse map.
+		case FragmentShaderType::Specular:
+			glUniform1f(specularStrengthLocation, m_Properties.specular);
+			glUniform1f(shininessLocation, m_Properties.shininess);
+
+			if (m_Properties.specularMap) {
+				glActiveTexture(GL_TEXTURE1);
+				// m_Properties.specularMap->Bind();
+			}
+			break;
+
+		// All needs all, ofc
+		case FragmentShaderType::All:
+			glUniform1f(diffuseStrengthLocation, m_Properties.diffuse);
+			glUniform1f(specularStrengthLocation, m_Properties.specular);
+			glUniform1f(shininessLocation, m_Properties.shininess);
+			glUniform1f(ambientStrengthLocation, m_Properties.ambient);
+			if (m_Properties.specularMap) {
+				glActiveTexture(GL_TEXTURE1);
+				 m_Properties.specularMap->Bind();
+			}
+			break;
+
 	}
+	
 }
 

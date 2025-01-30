@@ -22,7 +22,7 @@ public:
 
 	virtual ~Material() = default;
 
-	virtual void UseMaterial(uint32_t ambientStrengthLocation, uint32_t diffuseStrengthLocation, uint32_t specularStrengthLocation, uint32_t shininessLocation) const = 0;
+	virtual void UseMaterial(FragmentShaderType shaderType, uint32_t ambientStrengthLocation, uint32_t diffuseStrengthLocation, uint32_t specularStrengthLocation, uint32_t shininessLocation) const = 0;
 	virtual void SetProperties(const MaterialProperties& props) = 0;
 	virtual const MaterialProperties& GetProperties() const = 0;
 

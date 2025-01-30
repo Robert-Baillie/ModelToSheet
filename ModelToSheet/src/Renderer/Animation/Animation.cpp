@@ -48,7 +48,7 @@ void Animation::ReadMissingBones(const aiAnimation* animation, Model& model)
 		std::string boneName = channel->mNodeName.data;
 
 		if (boneInfoMap.find(boneName) == boneInfoMap.end()) {
-			TRACE_LOG("Adding new bone {0} with ID {1}", boneName, boneCount);
+			// TRACE_LOG("Adding new bone {0} with ID {1}", boneName, boneCount);
 			boneInfoMap[boneName].ID = boneCount;
 			boneCount++;
 		}
