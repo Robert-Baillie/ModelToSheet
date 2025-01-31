@@ -226,7 +226,7 @@ void Model::LoadMaterials(const aiScene* scene)
 			props.specularMap = LoadTexture(aiTextureType_SPECULAR, scene, material, directory);
 
 			if (!props.specularMap) {
-				ERROR_LOG("Failed to load diffuse texture for material {0}", i);
+				ERROR_LOG("Failed to load specular texture for material {0}", i);
 			}
 		}
 		else props.specularMap = defaultTexture;

@@ -116,7 +116,7 @@ void ResourceManager::CreateDefaultMaterials()
 	defaultProps.ambient = 0.2f;
 	defaultProps.diffuse = 0.8f;
 	defaultProps.specular = 0.5f;
-	defaultProps.shininess = 32.0f;
+	defaultProps.shininess = 1.0f;
 
 	std::filesystem::path currentPath = std::filesystem::path(__FILE__).parent_path();
 
@@ -133,15 +133,18 @@ void ResourceManager::CreateDefaultMaterials()
 	// Cehck if the default texture exists
 	if (!m_DefaultTexture) {
 		std::filesystem::path vertexPath = currentPath.parent_path().parent_path() / "resources" / "Textures" / "default_texture.png";
+		std::filesystem::path vertexPathSpec = currentPath.parent_path().parent_path() / "resources" / "Textures" / "default_specular.png";
 
 		m_DefaultTexture = Texture::LoadFromFile(vertexPath.string());
+		m_DefaultSpecular = Texture::LoadFromFile(vertexPathSpec.string());
 		m_Textures["DefaultTexture"] = m_DefaultTexture;
+		m_Textures["DefaultSpecular"] = m_DefaultSpecular;
 	}
 	
 	
 	defaultProps.shader = m_DefaultShader;
 	defaultProps.diffuseMap = m_DefaultTexture;
-	defaultProps.specularMap = m_DefaultTexture;
+	defaultProps.specularMap = m_DefaultSpecular;
 
 	// Create material from above
 	m_DefaultMaterial = std::shared_ptr<Material>(Material::Create(defaultProps));

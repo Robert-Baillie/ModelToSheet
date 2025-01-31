@@ -38,6 +38,7 @@ public:
 	std::shared_ptr<Texture> LoadTexture(const std::string& path, const std::string& name, const Texture::Specification& spec = Texture::GetDefaultSpecification());
 	std::shared_ptr<Texture> GetTexture(const std::string& name);
 	std::shared_ptr<Texture> GetDefaultTexture() { return m_DefaultTexture; }
+	std::shared_ptr<Texture> GetDefaultSpecular() { return m_DefaultSpecular; }
 
 
 	// Materials
@@ -80,6 +81,7 @@ private:
 	std::shared_ptr<Material> m_DefaultMaterial;
 	std::shared_ptr<Shader> m_DefaultShader;
 	std::shared_ptr<Texture> m_DefaultTexture;
+	std::shared_ptr<Texture> m_DefaultSpecular;
 
 
 };

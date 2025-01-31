@@ -24,6 +24,10 @@ private:
     void RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<Shader> shader);
     void ControlCamera();
 
+    // Export Functionality
+    void CaptureScreenshot();
+    void SaveFramebufferTexture(std::shared_ptr<Framebuffer> framebuffer, const std::string& filename);
+    std::string GetShaderTypeName(FragmentShaderType type);
 
 private:
     // Cameras
@@ -39,7 +43,7 @@ private:
 
     // Shaders
     std::shared_ptr<Shader> m_PerspectiveShader;
-    std::shared_ptr<Shader> m_OrthographicShader;
+    std::shared_ptr<Shader> m_CurrentOrthographicShader;
 
     // Framebuffers for both cameras
     std::shared_ptr<Framebuffer> m_PerspectiveFramebuffer;
@@ -67,6 +71,6 @@ private:
 
     // Flow control
     FragmentShaderType m_CurrentFragmentShaderType = FragmentShaderType::Diffuse;
-
+    std::unordered_map<FragmentShaderType, std::shared_ptr<Shader>> m_FragmentShaders;
   
 };
