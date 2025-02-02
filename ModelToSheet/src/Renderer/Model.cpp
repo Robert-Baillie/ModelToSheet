@@ -108,6 +108,7 @@ void Model::LoadNode(aiNode* node, const aiScene* scene)
 		LoadNode(node->mChildren[i], scene);
 	}
 }
+
 void Model::LoadMesh(aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<Vertex> vertices;
@@ -118,6 +119,13 @@ void Model::LoadMesh(aiMesh* mesh, const aiScene* scene)
 	std::vector<glm::vec4> weights(mesh->mNumVertices, glm::vec4(0.0f));
 
 	TRACE_LOG("Total bones in mesh: {0}", mesh->mNumBones);
+	
+	// Initialise fot this mesh
+	if (!m_BoundsInitialised) {
+		m_MinBounds = glm::vec3(std::numeric_limits<float>::max());
+		m_MaxBounds = glm::vec3(std::numeric_limits<float>::lowest());
+		m_BoundsInitialised = true;
+	}
 
 	// Building the vertices, textures and normals
 	for (size_t i = 0; i < mesh->mNumVertices; i++) {
@@ -128,6 +136,14 @@ void Model::LoadMesh(aiMesh* mesh, const aiScene* scene)
 		// Vertices
 		vertex.Position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 
+		// Update the bounds
+		m_MinBounds.x = std::min(m_MinBounds.x, vertex.Position.x);
+		m_MinBounds.y = std::min(m_MinBounds.y, vertex.Position.y);
+		m_MinBounds.z = std::min(m_MinBounds.z, vertex.Position.z);
+
+		m_MaxBounds.x = std::max(m_MaxBounds.x, vertex.Position.x);
+		m_MaxBounds.y = std::max(m_MaxBounds.y, vertex.Position.y);
+		m_MaxBounds.z = std::max(m_MaxBounds.z, vertex.Position.z);
 
 		// Tex Coords
 		if (mesh->mTextureCoords[0]) {

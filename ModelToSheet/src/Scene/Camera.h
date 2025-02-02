@@ -15,19 +15,21 @@ public:
 	const glm::vec3& GetPosition() const { return m_Position; }
 	void SetPosition(const glm::vec3& position) { m_Position = position; RecalculateViewMatrix(); }
 
-	float GetPitch() const { return m_Pitch; }
-	float GetYaw() const { return m_Yaw; }
+	//float GetPitch() const { return m_Pitch; }
+	//float GetYaw() const { return m_Yaw; }
 
 	// Camera Rotation
-	void SetPitch(float pitch) {
-		m_Pitch = pitch;
-		RecalculateViewMatrix();
-	}
+	//void SetPitch(float pitch) {
+	//	m_Pitch = pitch;
+	//	RecalculateViewMatrix();
+	//}
 
-	void SetYaw(float yaw) {
-		m_Yaw = yaw;
-		RecalculateViewMatrix();
-	}
+	//void SetYaw(float yaw) {
+	//	m_Yaw = yaw;
+	//	RecalculateViewMatrix();
+	//}
+
+	void LookAt(const glm::vec3& target);
 
 	// Camera Movement
 	void MoveForward(float deltaTime) { Move(m_Front * m_MoveSpeed * deltaTime); }

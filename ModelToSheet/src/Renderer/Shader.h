@@ -31,6 +31,17 @@ public:
 
 	// Static loader
 	static std::shared_ptr<Shader> CreateFromFile(const std::string& vertexPath, const std::string& fragmentPath, std::string shaderName);
+	static std::string GetShaderTypeName(FragmentShaderType type)
+	{
+		switch (type)
+		{
+		case FragmentShaderType::Normal: return "normal";
+		case FragmentShaderType::Specular: return "specular";
+		case FragmentShaderType::Diffuse: return "diffuse";
+		default: return "unknown";
+		}
+	}
+
 private:
 	uint32_t m_RendererID;
 	std::string m_ShaderName;

@@ -20,57 +20,63 @@ public:
     virtual void OnUpdate() override;
     virtual void OnImGuiRender() override;
 
+    float GetDistance()  { return m_OrbitRadius; }
+    float GetAzimuthalAngle()  { return glm::degrees(m_OrbitAzimuthal); } // Convert to degrees
+    float GetPolarAngle()  { return glm::degrees(m_OrbitPolar);  }
+    void SetDistance(float distance) { m_OrbitRadius = distance; }
+    void SetAzimuthalAngle(float degAngle) { m_OrbitAzimuthal = glm::radians(degAngle); } // Convert to Radians
+    void SetPolarAngle(float degAngle) { 
+        // Clamp these between 0.001 and 179.999 so that we do not flip the camera.
+        degAngle = glm::clamp(degAngle, 0.001f, 179.999f);
+        m_OrbitPolar = glm::radians(degAngle); 
+    }
+    void RecalculateCameraPositionFromSphericalCoords();
+
+
 private:
-    void RenderScene(std::shared_ptr<Camera> camera, std::shared_ptr<Shader> shader);
-    void ControlCamera();
+    void RenderScene(bool isCapturingScreenshot = false);
+ 
 
     // Export Functionality
     void CaptureScreenshot();
-    void SaveFramebufferTexture(std::shared_ptr<Framebuffer> framebuffer, const std::string& filename);
-    std::string GetShaderTypeName(FragmentShaderType type);
-
 private:
-    // Cameras
-    std::shared_ptr<PerspectiveCamera> m_PerspectiveCamera;
-    std::shared_ptr<OrthographicCamera> m_OrthographicCamera;
+    // Camera
+    std::shared_ptr<OrthographicCamera> m_Camera;
 
-    bool isFirstMove = true;
-    float lastMouseX = 0.0f;
-    float lastMouseY = 0.0f;
+    // Shader
+    std::shared_ptr<Shader> m_CurrentShader;
 
-    float m_CameraSpeed = 5.0f;
-    float m_CameraRotationSpeed = 1.0f;
-
-    // Shaders
-    std::shared_ptr<Shader> m_PerspectiveShader;
-    std::shared_ptr<Shader> m_CurrentOrthographicShader;
-
-    // Framebuffers for both cameras
-    std::shared_ptr<Framebuffer> m_PerspectiveFramebuffer;
-    std::shared_ptr<Framebuffer> m_OrthographicFramebuffer;
+    // Framebuffer
+    std::shared_ptr<Framebuffer> m_Framebuffer;
 
     // Sizes for viewports
-    glm::vec2 m_PersepectiveViewSize = { 0.0f, 0.0f };
-    glm::vec2 m_OrthographicViewSize = { 0.0f, 0.0f };
+    glm::vec2 m_ViewSize = { 0.0f, 0.0f };
 
     // Model settings
     Model m_Model; // should be a ptr
     glm::mat4 m_ModelTransform = glm::mat4(1.0f);
-    float m_ModelRotation = 0.0f;
-    float m_RotationSpeed = 20.0f;
 
-    Animator* m_Animator;
-    Animation* m_Animation;
+    // Animation Settings
+    Animator* m_Animator = nullptr;
+    Animation* m_Animation = nullptr;
 
     // Times
     float m_DeltaTime= 0.016f;
     float m_LastFrameTime = 0.0f;
 
 
-    
-
     // Flow control
     FragmentShaderType m_CurrentFragmentShaderType = FragmentShaderType::Diffuse;
     std::unordered_map<FragmentShaderType, std::shared_ptr<Shader>> m_FragmentShaders;
-  
+
+    // Control for Texture Size
+    float m_PixelScale = 4;
+    uint32_t m_TextureWidth, m_TextureHeight = 256;
+
+    // Camera Orbit Controls7
+    glm::vec3 m_OrbitCenter;
+    float m_OrbitRadius; // r in Spherical Coords
+    float m_OrbitAzimuthal; // Azimuthal angle (around Y cartesian axis)
+    float m_OrbitPolar; // Polar angle (from Y axis)
+
 };

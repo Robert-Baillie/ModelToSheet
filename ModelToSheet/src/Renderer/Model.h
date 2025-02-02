@@ -33,6 +33,8 @@ public:
 	inline int& GetBoneCount() { return m_BoneCounter; }
 
 
+	glm::vec3 GetDimensions() const { return m_MaxBounds - m_MinBounds; }
+	glm::vec3 GetCenter() const { return m_MinBounds + (GetDimensions() * 0.5f); }
 
 private:
 	void LoadNode(aiNode* node, const aiScene* scene);
@@ -59,7 +61,10 @@ private:
 	BoneInfoMap m_BoneInfoMap; 
 	int m_BoneCounter = 0; 
 
-
+	// Bounds
+	glm::vec3 m_MinBounds;
+	glm::vec3 m_MaxBounds;
+	bool m_BoundsInitialised = false;
     
 
 

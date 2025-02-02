@@ -2,6 +2,24 @@
 #include "Camera.h"
 
 
+void Camera::LookAt(const glm::vec3& target)
+{
+	// Constant World Up
+	const glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
+
+	// NCamera Vectors using this target and world up
+	m_Front = glm::normalize(target - m_Position);		// Point this at the target
+	m_Right = glm::normalize(glm::cross(m_Front, worldUp));		// Cros product of these
+	m_Up = glm::normalize(glm::cross(m_Right, m_Front)); // Perpendiculat to the view plane
+
+	// Calculate the pitch and yaw and recalculate
+	m_Yaw = glm::degrees(atan2(m_Front.z, m_Front.x));	// Horizontal angle from +ve x axis
+	m_Pitch = glm::degrees(asin(m_Front.y));	// Vertical angle from XZ plane
+
+	RecalculateViewMatrix();
+}
+
+
 
 OrthographicCamera::OrthographicCamera(float left, float right, float bottom, float top)
 {

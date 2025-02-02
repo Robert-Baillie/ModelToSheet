@@ -10,13 +10,9 @@ struct Material {
 };
 
 uniform Material material;
-uniform float u_PixelSize; // Size of the "Pixels" for the output
 
 void main() {
-	// Scale texture to create the effect
-	vec2 pixelatedTexCoord = floor(v_TexCoord / u_PixelSize) * u_PixelSize;
-
-	vec4 texColor = texture(material.diffuseMap, pixelatedTexCoord);
+	vec4 texColor = texture(material.diffuseMap, v_TexCoord);
 	color = texColor * material.diffuseStrength;
 	
 }

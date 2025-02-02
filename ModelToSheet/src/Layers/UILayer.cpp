@@ -3,9 +3,6 @@
 
 #include "imgui.h"
 
-UILayer::UILayer()
-{
-}
 
 void UILayer::OnAttach()
 {
@@ -66,13 +63,36 @@ void UILayer::OnImGuiRender()
 
     /* Controls */
     ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + twoThirdsWidth, viewport->WorkPos.y));
-    ImGui::SetNextWindowSize(ImVec2(oneThirdWidth, twoThirdsHeight));
+    ImGui::SetNextWindowSize(ImVec2(oneThirdWidth, viewportSize.y));
     if (ImGui::Begin("Controls Window", nullptr, viewport_flags))
     {
-        
-        ImGui::Text("This is Component 1");
-        ImGui::Button("Button 1");
-          
+        float polarDegrees = m_ViewportLayer->GetPolarAngle();
+        float azimuthalDegrees = m_ViewportLayer->GetAzimuthalAngle();
+
+
+        if (ImGui::SliderFloat("Vertical Angle", &polarDegrees, 0.0f, 180.0f))
+        {
+            m_ViewportLayer->SetPolarAngle(polarDegrees);
+            m_ViewportLayer->RecalculateCameraPositionFromSphericalCoords();
+        }
+
+        if (ImGui::SliderFloat("Horizontal Angle", &azimuthalDegrees, 0.0f, 360.0f))
+        {
+            m_ViewportLayer->SetAzimuthalAngle(azimuthalDegrees);
+            m_ViewportLayer->RecalculateCameraPositionFromSphericalCoords();
+        }
+
+        // Render each of the buttons
+        for (int i = 0; i < m_Presets.size(); i++) {
+           if(ImGui::Button(m_Presets[i].Name.c_str(), ImVec2(60, 25))) {
+               // Button hit, set the angles
+               m_ViewportLayer->SetPolarAngle(m_Presets[i].PolarAngle);
+               m_ViewportLayer->SetAzimuthalAngle(m_Presets[i].AzimuthalAngle);
+               m_ViewportLayer->RecalculateCameraPositionFromSphericalCoords();
+
+            }
+        }
+
 
         ImGui::End();
     }

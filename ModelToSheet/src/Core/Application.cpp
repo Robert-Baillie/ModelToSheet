@@ -30,9 +30,9 @@ Application::Application() {
 	 // Add the Layers
 	 m_DockSpaceLayer = new  DockspaceLayer(); // This layer handles the imgui initialisation per renderer
 	 PushLayer(m_DockSpaceLayer);
-	 PushLayer(new ViewportLayer());
-
-	 PushOverlay(new UILayer());
+	 ViewportLayer* viewportLayer = new ViewportLayer();
+	 PushLayer(viewportLayer);
+	 PushOverlay(new UILayer(viewportLayer));
 	 
 
 }

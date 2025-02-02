@@ -128,6 +128,14 @@ void ResourceManager::CreateDefaultMaterials()
 
 		m_DefaultShader = Shader::CreateFromFile(vertexPath.string(), fragmentPath.string(), "DefaultShader");
 		m_Shaders["DefaultShader"] = m_DefaultShader;
+
+		// Create the Diffuse and Normal Shaders whilst here:
+
+		std::filesystem::path diffusePath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "DiffuseF.shader";
+		std::filesystem::path normalPath = currentPath.parent_path().parent_path() / "resources" / "Shaders" / "NormalF.shader";
+		m_Shaders["DiffuseShader"] = Shader::CreateFromFile(vertexPath.string(), diffusePath.string(), "DiffuseShader");
+		m_Shaders["NormalShader"] = Shader::CreateFromFile(vertexPath.string(), normalPath.string(), "NormalShader");
+
 	}
 
 	// Cehck if the default texture exists
