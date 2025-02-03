@@ -45,6 +45,9 @@ public:
     std::string GetBoneName() const { return m_Name; }
     int GetBoneID() { return m_ID; }
 
+    // return the max frames in either of these, so we can know the true framecount of the animation
+    int GetMaxFrameCount() const { return std::max({ m_Positions.size(), m_Rotations.size(), m_Scales.size() }); }
+
 private:
     // Private methods remain the same
     glm::mat4 InterpolatePosition(float animationTime);

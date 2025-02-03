@@ -12,6 +12,25 @@ Animator::Animator(Animation* animation) :
 	for (int i = 0; i < MAX_BONES; i++) m_FinalBoneMatrices.push_back(glm::mat4(1.0f));
 }
 
+// Check these below.
+int Animator::GetCurrentFrame() const
+{
+	if (!m_CurrentAnimation) return -1; // No animation playing
+
+	float frameTime = m_CurrentAnimation->GetDuration() / m_CurrentAnimation->GetFrameCount();
+	return static_cast<int>(m_CurrentTime / frameTime);
+}
+
+void Animator::SetCurrentFrame(int frame)
+{
+	if (!m_CurrentAnimation) return; // No animation playing
+
+	// Get the time of this frame and return it
+	float frameTime = m_CurrentAnimation->GetDuration() / m_CurrentAnimation->GetFrameCount();
+	m_CurrentTime = frame * frameTime;
+}
+
+
 void Animator::UpdateAnimation(float dt)
 {
 	m_DeltaTime = dt;
@@ -60,3 +79,4 @@ void Animator::CalculateBoneTransform(const NodeData* node, glm::mat4 parentTran
 
 	for (int i = 0; i < node->ChildrenCount; i++) CalculateBoneTransform(&node->Children[i], globalTransformation);
 }
+

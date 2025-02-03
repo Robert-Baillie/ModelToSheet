@@ -28,9 +28,7 @@ ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 
 	// Rotate the model so it is the correct way up and look at the camera
 	m_ModelTransform = glm::mat4(1.0f);
-	m_ModelTransform = glm::translate(glm::mat4(1.0f), modelCenter + glm::vec3(0.0f, dimensions.y / 2.0f, 0.0f));
-	m_ModelTransform = glm::rotate(m_ModelTransform, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
-	m_ModelTransform = glm::rotate(m_ModelTransform, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	m_ModelTransform = glm::translate(glm::mat4(1.0f), modelCenter - glm::vec3(0.0f, dimensions.y / 2.0f, 0.0f));
 
 	// Assign Camera starting position
 	float maxDimension = std::max({ dimensions.x, dimensions.y, dimensions.z });
@@ -40,7 +38,7 @@ ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 	// Assign Camera Orbit Settings
 	m_OrbitCenter = modelCenter;
 	m_OrbitRadius = maxDimension * 2.0f; // Initial Distance as above
-	m_OrbitAzimuthal = glm::radians(180.0f);
+	m_OrbitAzimuthal = glm::radians(270.0f);
 	m_OrbitPolar = glm::radians(90.0f);
 
 	RecalculateCameraPositionFromSphericalCoords();
@@ -49,8 +47,14 @@ ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 void ViewportLayer::OnAttach()
 {
 	// Create the framebuffer with the size of the desired texture width
-	m_Framebuffer = Framebuffer::Create(m_TextureWidth, m_TextureHeight);
-
+	FramebufferSpecification spec;
+	spec.Width = m_TextureWidth;
+	spec.Height = m_TextureHeight;
+	spec.MinFilter = TextureFilter::Nearest;
+	spec.MaxFilter = TextureFilter::Nearest;
+	spec.Samples = 1;
+	m_Framebuffer = Framebuffer::Create(spec);
+	m_Framebuffer->Resize(m_TextureHeight , m_TextureHeight );
 
 	// Grab the shaders from Resource Manager. Initialise Shader Types
 	m_FragmentShaders[FragmentShaderType::Diffuse] = RESOURCE_MANAGER.GetShader("DiffuseShader"); 
@@ -78,6 +82,10 @@ void ViewportLayer::OnUpdate()
 
 void ViewportLayer::OnImGuiRender()
 {
+
+	/***** RENDERING THE PIXELATED MODEL *****/
+
+
 	// Push the style. This needs to be popped eventuallly
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -110,16 +118,16 @@ void ViewportLayer::OnImGuiRender()
 	glm::vec2 newSize = { sizeIm.x, sizeIm.y };
 
 
-	// If the size is not the same as the one we have loaded, then adjust the camera and framebuffer
-	if (m_ViewSize != newSize && sizeIm.x > 0 && sizeIm.y > 0) {
-		// Create a smaller framebuffer for pixelation effect. This will then be stretched to fill the viewport.
-		m_Framebuffer->Resize(newSize.x / m_PixelScale, newSize.y / m_PixelScale);
-		m_ViewSize = newSize;
-	}
 
 	int texID = m_Framebuffer->GetColorAttachmentRendererID();
-	ImGui::Image((ImTextureID)(intptr_t)texID, sizeIm, ImVec2(0, 0), ImVec2(1, 1));
+	ImVec2 textureSize(m_TextureWidth, m_TextureHeight);
+	ImVec2 winPos = ImGui::GetCursorScreenPos();
+	ImVec2 center = ImVec2(winPos.x + (sizeIm.x - textureSize.x) * 0.5f,
+		winPos.y + (sizeIm.y - textureSize.y) * 0.5f);
+	ImGui::SetCursorScreenPos(center);
+	ImGui::Image((ImTextureID)(intptr_t)texID, textureSize, ImVec2(0, 1), ImVec2(1, 0)); // THis is what was causing the flipped model rotation at the start.
 
+	/***** RENDERING THE BUTTONS *****/
 
 	// Overlaying the buttons. Get the upper and lower limits of the box
 	ImVec2 start = ImGui::GetItemRectMin(); // Top Left
@@ -144,8 +152,8 @@ void ViewportLayer::OnImGuiRender()
 	buttonX = end.x - 75;
 
 	ImGui::SetCursorScreenPos(ImVec2(buttonX, buttonY));
-	if (ImGui::Button("Capture")) {
-		CaptureScreenshot();
+	if (ImGui::Button("Export Animation")) {
+		ExportAnimationSpriteSheet();
 	}
 
 	ImGui::End();
@@ -160,8 +168,7 @@ void ViewportLayer::OnImGuiRender()
 void ViewportLayer::RenderScene(bool isCapturingScreenshot)
 {
 	// Clear the screen. No Transparency for Screenshot mode
-	if(isCapturingScreenshot) RenderCommand::SetClearColour({ 0.0f, 0.0f, 0.0f, 0.0f });
-	else RenderCommand::SetClearColour({ 0.8f, 0.8f, 0.8f, 1.0f });
+	RenderCommand::SetClearColour({ 0.0f, 0.0f, 0.0f, 0.0f });
 
 	RenderCommand::Clear();
 
@@ -206,36 +213,88 @@ void ViewportLayer::RecalculateCameraPositionFromSphericalCoords()
 }
 
 
-void ViewportLayer::CaptureScreenshot()
+void ViewportLayer::ExportAnimationSpriteSheet()
 {
-	// We want to loop through the shader types. Bind their respective shaders to the framebuffer, and Save the Framebuffer Texture
+	// TEST FOR NOW
+	int frameCount = 25; // How many we are capturing, this can be defined by the user
 
-	// Sotre the original to restore later
+	float originalTime = m_Animator->GetCurrentTime(); 
+	int originalFrame = m_Animator->GetCurrentFrame(); 
+
+	// Store the original shader type to redisplay at the end. Get the shaderTypes we want to export into files.
 	FragmentShaderType originalType = m_CurrentFragmentShaderType;
+	std::vector<FragmentShaderType> shaderTypes = { FragmentShaderType::Diffuse, FragmentShaderType::Normal };
 
-	// Loop through the shader types to create
-	std::vector<FragmentShaderType>	 shaderTypes = { FragmentShaderType::Normal, FragmentShaderType::Diffuse };
-
+	// Looping over these types
 	for (auto shaderType : shaderTypes) {
-		// Set the current shader
+		// Assign the current shader based n this type.
 		m_CurrentShader = m_FragmentShaders[shaderType];
+		m_CurrentFragmentShaderType = shaderType;
 
-		// Render the scene with this shader as usual
-		m_Framebuffer->Bind();
-		RenderScene(true);
-		m_Framebuffer->Unbind();
+		// We want to export the image, for this we need to have a set of pixel data that is large enough to store the width of each frame, by the height, but the size of a char (4) and by the amount of frames being captured.
+		std::vector<unsigned char> spriteSheetPixels(m_TextureWidth * m_TextureHeight * 4 * frameCount);
+		
+		
 
+		// Loop through the frames for this shader
+		for (int frame = 0; frame < frameCount; frame++) {
+			// Go to the next frame. We are simulating 60 fps below
+			m_Animator->UpdateAnimation(0.016f);
 
-		// Capture the framebuffer texture
-		//SaveFramebufferTexture(m_Framebuffer, fmt::format("{}_map.png", GetShaderTypeName(shaderType)));
+			// Redner the scene based on this frame
+			m_Framebuffer->Bind();
+			RenderScene();
 
+			// Read the pixels of thisframe and temporarily store
+			std::vector<unsigned char> framePixels(m_TextureWidth * m_TextureHeight * 4);
+			RenderCommand::ReadPixels(m_TextureWidth, m_TextureHeight, framePixels);
+			m_Framebuffer->Unbind();
+
+			// Add this into the final spritesheet pixels
+			for (int y = 0; y < m_TextureHeight; y++) {
+				size_t destOffset =
+					y * (m_TextureWidth * frameCount * 4) +  // Start of row y in the sprite sheet
+					frame * (m_TextureWidth * 4);            // Horizontal position for this frame
+
+				memcpy(
+					spriteSheetPixels.data() + destOffset,	// Destination
+					framePixels.data() + ((m_TextureHeight - 1 - y) * m_TextureWidth * 4),
+					m_TextureWidth * 4
+				);
+			}
+
+			
+		}
+		
+
+		// Save the sprite sheet into destination screenshots. Making sure that screen shots exists
+		std::string filename = fmt::format("{}_animation_spritesheet.png", Shader::GetShaderTypeName(shaderType));
+		std::string executablePath = std::filesystem::current_path().string();
+		std::string fullPath = executablePath + "/Screenshots/" + filename;
+		std::filesystem::create_directories(std::filesystem::path(fullPath).parent_path());
+		
+
+		stbi_write_png(
+			fullPath.c_str(),
+			m_TextureWidth * frameCount,  // Total width is frames side by side
+			m_TextureHeight,
+			4,
+			spriteSheetPixels.data(),
+			m_TextureWidth * 4 * frameCount
+		);
+
+		// Restore the time for the next shader
+		m_Animator->SetCurrentTime(originalTime);
 
 	}
 
+	// Restore the time for the users seemless experience
+	m_Animator->SetCurrentTime(originalTime);
+
 	// Restore original shader
 	m_CurrentShader = m_FragmentShaders[originalType];
+	m_CurrentFragmentShaderType = originalType;
 }
-
 
 
 

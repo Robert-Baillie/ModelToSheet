@@ -18,6 +18,13 @@ public:
 	Animation* GetCurrentAnimation() const { return m_CurrentAnimation; }
 
 
+	// Get and Set for the current frames and times
+	float GetCurrentTime() const { return m_CurrentTime; }
+	void SetCurrentTime(float time)  { m_CurrentTime = time; }
+	int GetCurrentFrame() const;
+	void SetCurrentFrame(int frame);
+
+
 	std::vector<glm::mat4> GetFinalBoneMatrices() { return m_FinalBoneMatrices; }
 
 private:

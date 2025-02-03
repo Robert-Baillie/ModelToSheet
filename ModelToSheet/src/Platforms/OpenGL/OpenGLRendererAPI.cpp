@@ -23,3 +23,8 @@ void OpenGLRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray>& vertexAr
 {
 	glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
 }
+
+void OpenGLRendererAPI::ReadPixels(uint32_t width, uint32_t height, std::vector<unsigned char>& pixels)
+{
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+}

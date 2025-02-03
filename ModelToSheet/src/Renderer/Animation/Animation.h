@@ -27,6 +27,20 @@ public:
 
 	inline  NodeData& GetRootNode() { return m_RootNode; }
 	inline  BoneInfoMap& GetBoneIDMap() { return m_BoneInfoMap; }
+
+	int GetFrameCount() const {
+		// Initialise
+		int maxFrames = 0;
+
+		// Loop through the bones and return the maximum frame count of these
+		for (const auto& bone : m_Bones)
+		{
+			int boneFrames = bone.GetMaxFrameCount();
+			maxFrames = std::max(maxFrames, boneFrames);
+		}
+		return maxFrames;
+	}
+
 private:
 	void ReadMissingBones(const aiAnimation* animation, Model& model);
 	void ReadHierarchyData(NodeData& dest, const aiNode* src);

@@ -2,6 +2,7 @@
 layout(location = 0) out vec4 color;
 
 in vec3 v_Normal; // World space normal from vertex
+in vec2 v_TexCoord;
 
 void main() {
 	vec3 normal = normalize(v_Normal);

@@ -2,7 +2,7 @@
 #include "Framebuffer.h"	
 #include "Platforms/OpenGL/OpenGLFramebuffer.h"
 
-std::shared_ptr<Framebuffer> Framebuffer::Create(uint32_t width, uint32_t height)
+std::shared_ptr<Framebuffer> Framebuffer::Create(const FramebufferSpecification& spec)
 {
     switch (Renderer::GetAPI())
     {
@@ -10,7 +10,7 @@ std::shared_ptr<Framebuffer> Framebuffer::Create(uint32_t width, uint32_t height
         ASSERT(false, "RendererAPI::API::None is not supported!");
         return nullptr;
     case RendererAPI::API::OpenGL:
-        return std::make_shared<OpenGLFramebuffer>(width, height);
+        return std::make_shared<OpenGLFramebuffer>(spec);
     }
 
     ASSERT(false, "Unknown RendererAPI!");

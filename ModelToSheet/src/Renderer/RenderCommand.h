@@ -21,6 +21,8 @@ public:
 
 	inline static void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray) { s_RendererAPI->DrawIndexed(vertexArray); }
 
+	inline static void ReadPixels(uint32_t width, uint32_t height, std::vector<unsigned char>& pixels) { s_RendererAPI->ReadPixels(width, height, pixels); }
+
 private:
 	static RendererAPI* s_RendererAPI;
 

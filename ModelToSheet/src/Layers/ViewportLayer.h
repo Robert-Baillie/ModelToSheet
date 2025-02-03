@@ -38,7 +38,7 @@ private:
  
 
     // Export Functionality
-    void CaptureScreenshot();
+    void ExportAnimationSpriteSheet();
 private:
     // Camera
     std::shared_ptr<OrthographicCamera> m_Camera;
@@ -70,8 +70,7 @@ private:
     std::unordered_map<FragmentShaderType, std::shared_ptr<Shader>> m_FragmentShaders;
 
     // Control for Texture Size
-    float m_PixelScale = 4;
-    uint32_t m_TextureWidth, m_TextureHeight = 256;
+    uint32_t m_TextureWidth = 512, m_TextureHeight = 512;
 
     // Camera Orbit Controls7
     glm::vec3 m_OrbitCenter;
