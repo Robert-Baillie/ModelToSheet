@@ -307,6 +307,8 @@ void ViewportLayer::ExportAnimationSpriteSheet()
 		// Restore the time for the next shader
 		m_Animator->SetCurrentTime(originalTime);
 
+		
+
 	}
 
 	// Restore the time for the users seemless experience
@@ -315,6 +317,7 @@ void ViewportLayer::ExportAnimationSpriteSheet()
 	// Restore original shader
 	m_CurrentShader = m_FragmentShaders[originalType];
 	m_CurrentFragmentShaderType = originalType;
+
 }
 
 

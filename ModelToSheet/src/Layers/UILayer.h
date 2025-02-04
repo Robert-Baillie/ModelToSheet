@@ -38,6 +38,7 @@ private:
 	void RenderRepositoryTab();
 	void RenderModelControls();
 	void RenderAnimationControls();
+	void RenderExportControls();
 
 
 	// Event functions

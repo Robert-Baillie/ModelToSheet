@@ -6,6 +6,11 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#ifdef WIN32
+#include <windows.h>
+#include <shellapi.h>
+#endif
+
 
 class Helpers
 {
@@ -52,4 +57,20 @@ public:
 			INFO_LOG("{} - Row {}: {}", matrixName, row, rowStream.str());
 		}
 	}
+
+
+
+	static void OpenFolder(const std::string& path) {
+#ifdef WIN32
+		// Not entirely sure how this works. Standard Code
+		std::wstring widePath(path.begin(), path.end());
+		HINSTANCE result = ShellExecuteW(NULL, L"explore", widePath.c_str(),
+			NULL, NULL, SW_SHOWNORMAL);
+
+		if ((intptr_t)result <= 32) {
+			ASSERT(false, "Failed to open folder on windows");
+		}
+#endif
+	}
+
 };

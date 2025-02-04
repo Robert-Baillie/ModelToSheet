@@ -76,6 +76,8 @@ void UILayer::OnImGuiRender()
         RenderModelControls();
 
         RenderAnimationControls();
+
+        RenderExportControls();
         
         ImGui::End();
     }
@@ -123,13 +125,28 @@ void UILayer::RenderRepositoryTab()
 {
     if (ImGui::BeginTabItem("Repository")) {
 
+        /* Control Bar*/
+        // use all width (0) and 60 px height.
+        ImGui::BeginChild("ControlBar", ImVec2(0, 50), true);
         
-        // Get the columns that can fit into the repository
+        // Left : Thumbnail control
+        ImGui::SetNextItemWidth(200);
         static float thumbnailSize = 96;   // Can be altered below
         ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 64, 128);
 
+        
+        ImGui::SameLine(ImGui::GetWindowWidth() - 160);
+
+        // Right: Button to open the folder
+        if (ImGui::Button("Open Current Folder", ImVec2(150, 30))) {
+            Helpers::OpenFolder(m_CurrentDirectory.string());
+        }
+
+        ImGui::EndChild();
 
 
+
+        /* Repository Items */
         // Start the scrolling Region
         ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
         float padding = 16.0f;
@@ -188,11 +205,19 @@ void UILayer::RenderRepositoryTab()
 
 void UILayer::RenderModelControls()
 {
+    // Take 30% of the Right hand UI
+    ImGui::SeparatorText("Camera Controls");
+    ImGui::BeginChild("CameraControls", ImVec2(0, ImGui::GetWindowHeight() * 0.3f), true);
+
+    // Begin Group for manual set controls
+    ImGui::BeginGroup();
     float polarDegrees = m_CurrentPolarAngle; // Cached angle
     float azimuthalDegrees = m_CurrentAzimuthalAngle;
 
-
-    if (ImGui::SliderFloat("Vertical Angle", &polarDegrees, 0.0f, 180.0f))
+    // Sliders with formatting
+    ImGui::Text("Orbit Controls");
+    ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.9f);
+    if (ImGui::SliderFloat("##Vertical", &polarDegrees, 0.0f, 180.0f, "Vertical: %.1f°"))
     {
        // The polar angle has been changed. Dispatch an event
         CameraOrbitEvent event(polarDegrees, azimuthalDegrees);
@@ -201,26 +226,43 @@ void UILayer::RenderModelControls()
         m_CurrentPolarAngle = polarDegrees;
     }
 
-    if (ImGui::SliderFloat("Horizontal Angle", &azimuthalDegrees, 0.0f, 360.0f))
+    ImGui::SetNextItemWidth(ImGui::GetWindowWidth() * 0.9f);
+    if (ImGui::SliderFloat("##Horizontal", &azimuthalDegrees, 0.0f, 360.0f, "Horizontal: %.1f°"))
     {
         CameraOrbitEvent event(polarDegrees, azimuthalDegrees);
         Application::Get().OnEvent(event);
 
         m_CurrentAzimuthalAngle = azimuthalDegrees;
     }
+    ImGui::EndGroup();
+
+
+    ImGui::Spacing();
+    ImGui::Text("Orbit Controls");
+
+
+    // Variables for Button Layout
+    float windowWidth = ImGui::GetWindowWidth();
+    float buttonWidth = 80;
+    float buttonHeight = 30;
+    int buttonsPerRow = (int)(windowWidth / (buttonWidth + 10));
+    if (buttonsPerRow < 1) buttonsPerRow = 1;
 
     // Render each of the buttons
     for (int i = 0; i < m_Presets.size(); i++) {
-        if (ImGui::Button(m_Presets[i].Name.c_str(), ImVec2(60, 25))) {
-            // Button hit, set the angles and send the event
+        if (i % buttonsPerRow != 0) {
+            ImGui::SameLine();
+        }
+
+        if (ImGui::Button(m_Presets[i].Name.c_str(), ImVec2(buttonWidth, buttonHeight))) {
             CameraOrbitEvent event(m_Presets[i].PolarAngle, m_Presets[i].AzimuthalAngle);
             Application::Get().OnEvent(event);
-
             m_CurrentPolarAngle = m_Presets[i].PolarAngle;
             m_CurrentAzimuthalAngle = m_Presets[i].AzimuthalAngle;
         }
     }
 
+    ImGui::EndChild();
 
 }
 
@@ -245,6 +287,7 @@ void UILayer::RenderAnimationControls()
 
     // Loop through the animations.
     if (ImGui::BeginChild("AnimationList", ImVec2(0, 120), true)) {
+
         for (const auto& [name, anim] : animations) {
 
             if (ImGui::Selectable(name.c_str(), m_Animator->GetCurrentAnimation()->GetName() == name)) {
@@ -266,11 +309,35 @@ void UILayer::RenderAnimationControls()
         ImGui::EndChild();
     }
 
+}
 
+void UILayer::RenderExportControls()
+{
+    // Add buttons at the bottom right
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Calculate button positions
+    float buttonWidth = 120.0f;
+    float buttonHeight = 40.0f;
+    ImVec2 windowSize = ImGui::GetWindowSize();
+    ImGui::SetCursorPos(ImVec2(windowSize.x - buttonWidth - 20.0f, windowSize.y - buttonHeight - 20.0f));   // Assign to the bottom right, adjust by width and padding
+
+    if (ImGui::Button("Export", ImVec2(buttonWidth, buttonHeight))) {
+        
+    }
+
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(windowSize.x - (2 * buttonWidth) - 40.0f); // More Left than the above
+
+    if (ImGui::Button("Open Screenshot", ImVec2(buttonWidth, buttonHeight))) {
+        // Handle open screenshot action
+        std::string path = std::filesystem::current_path().string() + "/Screenshots/";
+        Helpers::OpenFolder(path);
+    }
 }
 
 // Event functions
-
 
 bool UILayer::OnModelLoadComplete(ModelLoadCompleteEvent& event)
 {
