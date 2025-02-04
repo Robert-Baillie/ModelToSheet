@@ -2,7 +2,7 @@
 #include "Texture.h"
 #include "Material.h"
 #include "Mesh.h"
-#include "Animation/Bone.h"
+#include "Animation/Animation.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -36,10 +36,14 @@ public:
 	glm::vec3 GetDimensions() const { return m_MaxBounds - m_MinBounds; }
 	glm::vec3 GetCenter() const { return m_MinBounds + (GetDimensions() * 0.5f); }
 
+	std::shared_ptr<Animation> GetAnimation(const std::string& name);
+	const std::map<std::string, std::shared_ptr<Animation>>& GetAnimations() const { return m_Animations; }
+
 private:
 	void LoadNode(aiNode* node, const aiScene* scene);
 	void LoadMesh(aiMesh* mesh, const aiScene* scene);
 	void LoadMaterials(const aiScene* scene);
+	void LoadAnimations(const aiScene* scene);
 
 	std::shared_ptr<Texture> LoadTexture(aiTextureType flag, const aiScene* scene, const aiMaterial* material, const std::string& directory);
 	std::shared_ptr<Texture> LoadTextureFromEmbedded(const aiTexture* texture);
@@ -67,6 +71,8 @@ private:
 	bool m_BoundsInitialised = false;
     
 
+	// Animation data
+	std::map<std::string, std::shared_ptr<Animation>> m_Animations;
 
 
 };

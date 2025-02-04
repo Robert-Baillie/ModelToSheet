@@ -2,6 +2,8 @@
 #include "Model.h"
 
 
+// idk where to put this so here: https://www.youtube.com/shorts/y1er4qFQlCw
+
 Model::Model(const std::string& fileName, const std::string modelName)
 {
 	m_ModelPath = fileName;
@@ -29,6 +31,7 @@ void Model::LoadModel(const std::string& fileName)
 	TRACE_LOG("This model has {0} animations: ", scene->mNumAnimations);
  	LoadNode(scene->mRootNode, scene); 
 	LoadMaterials(scene);
+	LoadAnimations(scene);
 }
 
 void Model::Draw(FragmentShaderType shaderType, std::shared_ptr<Shader> shader)
@@ -93,6 +96,15 @@ void Model::ClearModel()
 }
 
 
+
+std::shared_ptr<Animation> Model::GetAnimation(const std::string& name) 
+{
+	auto it = m_Animations.find(name);
+	if (it != m_Animations.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
 
 void Model::LoadNode(aiNode* node, const aiScene* scene)
 {
@@ -265,6 +277,27 @@ void Model::LoadMaterials(const aiScene* scene)
 	// If no materials were loaded, use default
 	if (m_MaterialList.empty()) {
 		m_MaterialList.push_back(RESOURCE_MANAGER.GetDefaultMaterial());
+	}
+}
+
+void Model::LoadAnimations(const aiScene* scene)
+{
+	if (!scene->HasAnimations()) {
+		WARN_LOG("Model has no animations!");
+		return;
+	}
+
+	// Loop through the animations
+	for (unsigned int i = 0; i < scene->mNumAnimations; i++) {
+		const aiAnimation* anim = scene->mAnimations[i];
+		std::string animName = anim->mName.length > 0 ? anim->mName.C_Str() : "anim_" + std::to_string(i); // If no name, set the name to the anim_index
+
+		TRACE_LOG("Loading Animation: {0}", animName);
+
+		// Create the animations and add to the animation map 
+		auto animation = std::make_shared<Animation>(scene, i, *this);
+		animation->SetName(animName);
+		m_Animations[animName] = animation;
 	}
 }
 

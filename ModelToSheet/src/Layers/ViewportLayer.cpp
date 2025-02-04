@@ -16,6 +16,9 @@ ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 {
 	// Create the camera
 	m_Camera = std::make_shared<OrthographicCamera>(-1.0f, 1.0f, -1.0f, 1.0f);
+
+	m_OrbitPolar = glm::radians(90.0f);
+	m_OrbitAzimuthal = glm::radians(270.0f);
 }
 
 void ViewportLayer::OnAttach()
@@ -152,8 +155,11 @@ void ViewportLayer::LoadModel(const std::string& path, const std::string& name)
 	if (!m_Model) m_Model = RESOURCE_MANAGER.LoadModel(path, name);
 
 	// If it loaded successful, recreate all nevessary variables and animations
-	m_Animation = new Animation(path, m_Model);
-	m_Animator = new Animator(m_Animation);
+	m_Animator = new Animator;
+
+	for (const auto& [name, anim] : m_Model->GetAnimations()) {
+		m_Animator->AddAnimation(name, anim);	// This will play the first animation added.
+	}
 
 	glm::vec3 modelCenter = m_Model->GetCenter();
 	glm::vec3 dimensions = m_Model->GetDimensions();

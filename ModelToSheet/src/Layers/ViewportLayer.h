@@ -19,8 +19,8 @@ public:
     virtual void OnUpdate() override;
     virtual void OnImGuiRender() override;
 
-    // User Functionality
-    void LoadModel(const std::string& path, const std::string& name);
+   
+    
 
     float GetDistance()  { return m_OrbitRadius; }
     float GetAzimuthalAngle()  { return glm::degrees(m_OrbitAzimuthal); } // Convert to degrees
@@ -38,7 +38,8 @@ public:
 private:
     void RenderScene(bool isCapturingScreenshot = false);
     
-    void ClearCurrentModel() { delete m_Animation; delete m_Animator; }
+    void ClearCurrentModel() { delete m_CurrentAnimation; delete m_Animator; }
+    void LoadModel(const std::string& path, const std::string& name);
 
     // Export Functionality
     void ExportAnimationSpriteSheet();
@@ -61,7 +62,7 @@ private:
 
     // Animation Settings
     Animator* m_Animator = nullptr;
-    Animation* m_Animation = nullptr;
+    Animation* m_CurrentAnimation = nullptr;
 
     // Times
     float m_DeltaTime= 0.016f;

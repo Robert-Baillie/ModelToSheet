@@ -14,11 +14,12 @@ struct NodeData	 {
 	int ChildrenCount;
 };
 
+class Model; // Forward declaration.
 
 class Animation {
 public:
 	Animation() = default;
-	Animation(const std::string& animationPath, std::shared_ptr<Model> model);
+	Animation(const aiScene* scene, unsigned int animIndex, Model& model);
 
 	Bone* FindBone(const std::string& name);
 
@@ -27,6 +28,9 @@ public:
 
 	inline  NodeData& GetRootNode() { return m_RootNode; }
 	inline  BoneInfoMap& GetBoneIDMap() { return m_BoneInfoMap; }
+
+	const std::string& GetName() const { return m_Name; }
+	void SetName(const std::string& name) { m_Name = name; }
 
 	int GetFrameCount() const {
 		// Initialise
@@ -45,6 +49,8 @@ private:
 	void ReadMissingBones(const aiAnimation* animation, Model& model);
 	void ReadHierarchyData(NodeData& dest, const aiNode* src);
 private:
+	std::string m_Name;
+
 	float m_Duration;
 	int m_TicksPerSecond;
 

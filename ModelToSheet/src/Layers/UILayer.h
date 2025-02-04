@@ -1,12 +1,11 @@
 #pragma once
 #include "Layer.h"
 #include "Core/Log.h"
-#include "ViewportLayer.h"
 
 class UILayer : public Layer {
 public:
-	UILayer(ViewportLayer* viewportLayer)
-		: m_ViewportLayer(viewportLayer),
+	UILayer()
+		: 
 		m_assetDirectory(std::filesystem::current_path() / "Models") {
 		// Initialise the Presets
 		m_Presets.push_back({ 90.0f, 270.0f, "Front" });
@@ -33,6 +32,8 @@ public:
 private:
 	void RenderLoggingTab();
 	void RenderRepositoryTab();
+	void RenderModelControls();
+	void RenderAnimationControls();
 
 private:
 	struct ViewPreset {
@@ -44,7 +45,6 @@ private:
 	std::vector<ViewPreset> m_Presets;
 
 private:
-	ViewportLayer* m_ViewportLayer = nullptr;
 
 	// Assign directories
 	const std::filesystem::path m_assetDirectory;

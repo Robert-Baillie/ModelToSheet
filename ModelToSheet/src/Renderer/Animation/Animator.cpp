@@ -1,12 +1,11 @@
 #include "pch.h"
 #include "Animator.h"	
 
-Animator::Animator(Animation* animation) :
+Animator::Animator() :
 	m_DeltaTime(0.0f)
 {
 	// Pass in the animation  and initalise final bone matrices
 	m_CurrentTime = 0.0f;
-	m_CurrentAnimation = animation;
 
 	m_FinalBoneMatrices.reserve(MAX_BONES);
 	for (int i = 0; i < MAX_BONES; i++) m_FinalBoneMatrices.push_back(glm::mat4(1.0f));
@@ -30,6 +29,15 @@ void Animator::SetCurrentFrame(int frame)
 	m_CurrentTime = frame * frameTime;
 }
 
+void Animator::AddAnimation(const std::string& name, std::shared_ptr<Animation> anim)
+{
+	// Add animation
+	m_Animations[name] = anim;
+
+	// If there is only one animation then this is the first, so play it
+	if (m_Animations.size() == 1) PlayAnimation(name);
+}
+
 
 void Animator::UpdateAnimation(float dt)
 {
@@ -41,9 +49,9 @@ void Animator::UpdateAnimation(float dt)
 	}
 }
 
-void Animator::PlayAnimation(Animation* pAnimation)
+void Animator::PlayAnimation(std::string name)
 {
-	m_CurrentAnimation = pAnimation;
+	m_CurrentAnimation = m_Animations[name];
 	m_CurrentTime = 0.0f;
 }
 

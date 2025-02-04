@@ -1,22 +1,21 @@
 #include "pch.h"	
 #include "Animation.h"
 
-Animation::Animation(const std::string& animationPath, std::shared_ptr<Model>  model)
+Animation::Animation(const aiScene* scene, unsigned int animIndex, Model& model)
 {
-	// Importer to triangulate Mesh Data and chcek it exists
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(animationPath, ASSIMP_IMPORTER_FLAGS);
-
 	ASSERT(scene && scene->mRootNode, "No Scene/Scene RootNode");
+	ASSERT(animIndex < scene->mNumAnimations, "Animation index out of range");
 
-	auto animation = scene->mAnimations[0];
+
+	auto animation = scene->mAnimations[animIndex];
 	m_Duration = animation->mDuration;
 	m_TicksPerSecond = animation->mTicksPerSecond;
+	m_Name = animation->mName.length > 0 ? animation->mName.C_Str() : "unnamed_animation"; // This is likely to be set anyway.
 
 	aiMatrix4x4 globalTransformation = scene->mRootNode->mTransformation;
 	globalTransformation = globalTransformation.Inverse();
 	ReadHierarchyData(m_RootNode, scene->mRootNode);
-	ReadMissingBones(animation, *model);
+	ReadMissingBones(animation, model);
 }
 
 Bone* Animation::FindBone(const std::string& name)

@@ -62,34 +62,11 @@ void UILayer::OnImGuiRender()
     ImGui::SetNextWindowSize(ImVec2(oneThirdWidth, viewportSize.y));
     if (ImGui::Begin("Controls Window", nullptr, viewport_flags))
     {
-        float polarDegrees = m_ViewportLayer->GetPolarAngle();
-        float azimuthalDegrees = m_ViewportLayer->GetAzimuthalAngle();
+        // Below may need to be sectioned off
+        RenderModelControls();
 
-
-        if (ImGui::SliderFloat("Vertical Angle", &polarDegrees, 0.0f, 180.0f))
-        {
-            m_ViewportLayer->SetPolarAngle(polarDegrees);
-            m_ViewportLayer->RecalculateCameraPositionFromSphericalCoords();
-        }
-
-        if (ImGui::SliderFloat("Horizontal Angle", &azimuthalDegrees, 0.0f, 360.0f))
-        {
-            m_ViewportLayer->SetAzimuthalAngle(azimuthalDegrees);
-            m_ViewportLayer->RecalculateCameraPositionFromSphericalCoords();
-        }
-
-        // Render each of the buttons
-        for (int i = 0; i < m_Presets.size(); i++) {
-           if(ImGui::Button(m_Presets[i].Name.c_str(), ImVec2(60, 25))) {
-               // Button hit, set the angles
-               m_ViewportLayer->SetPolarAngle(m_Presets[i].PolarAngle);
-               m_ViewportLayer->SetAzimuthalAngle(m_Presets[i].AzimuthalAngle);
-               m_ViewportLayer->RecalculateCameraPositionFromSphericalCoords();
-
-            }
-        }
-
-
+        RenderAnimationControls();
+        
         ImGui::End();
     }
 }
@@ -195,4 +172,74 @@ void UILayer::RenderRepositoryTab()
         ImGui::EndChild();
         ImGui::EndTabItem();
     }
+}
+
+void UILayer::RenderModelControls()
+{
+    float polarDegrees 
+    float azimuthalDegrees =
+
+
+    if (ImGui::SliderFloat("Vertical Angle", &polarDegrees, 0.0f, 180.0f))
+    {
+       
+    }
+
+    if (ImGui::SliderFloat("Horizontal Angle", &azimuthalDegrees, 0.0f, 360.0f))
+    {
+    }
+
+    // Render each of the buttons
+    for (int i = 0; i < m_Presets.size(); i++) {
+        if (ImGui::Button(m_Presets[i].Name.c_str(), ImVec2(60, 25))) {
+            // Button hit, set the angles
+            m_ViewportLayer->SetPolarAngle(m_Presets[i].PolarAngle);
+            m_ViewportLayer->SetAzimuthalAngle(m_Presets[i].AzimuthalAngle);
+            m_ViewportLayer->RecalculateCameraPositionFromSphericalCoords();
+
+        }
+    }
+
+
+}
+
+void UILayer::RenderAnimationControls()
+{
+    // Check if ther is a model
+    auto model = m_ViewportLayer->GetCurrentModel();
+    if (!model) {
+        ImGui::Text("No model loaded.");
+        return;
+    }
+
+    // Get the animations and model.
+    ImGui::SeparatorText("Animations");
+
+    // Could cache this on an event so we do not need to grab it every frame. Infact all buttons called could be cached beforehand.
+    const auto& animations = model->GetAnimations();
+
+    if (animations.empty()) {
+        ImGui::Text("No animations available.");
+        return;
+    }
+
+    // Loop through the animations.
+    if (ImGui::BeginChild("AnimationList", ImVec2(0, 120), true)) {
+        for (const auto& [name, anim] : animations) {
+            if (ImGui::Selectable(name.c_str(), m_ViewportLayer->GetCurrentAnimation()->GetName() == name)) {
+                m_ViewportLayer->PlayAnimation(name); // Once again should be an event.
+            }
+
+            // Show animation details on hover
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::Text("Duration: %.2f s", anim->GetDuration() / anim->GetTicksPerSecond());
+                ImGui::Text("Frames: %d", anim->GetFrameCount());
+                ImGui::EndTooltip();
+            }
+        }
+
+    }
+
+
 }
