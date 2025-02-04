@@ -14,34 +14,8 @@
 
 ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 {
-	// Test: Get a default model.
-	std::string executablePath = std::filesystem::current_path().string();
-	std::string modelPath = executablePath + "/Assets/Models/Test.fbx";
-	m_Model = *RESOURCE_MANAGER.LoadModel(modelPath, "Weird Creature");
-
-	// Load the Model Animation and Animator.
-	m_Animation = new Animation(modelPath, &m_Model);
-	m_Animator = new Animator(m_Animation);
-
-	glm::vec3 modelCenter = m_Model.GetCenter();
-	glm::vec3 dimensions = m_Model.GetDimensions();
-
-	// Rotate the model so it is the correct way up and look at the camera
-	m_ModelTransform = glm::mat4(1.0f);
-	m_ModelTransform = glm::translate(glm::mat4(1.0f), modelCenter - glm::vec3(0.0f, dimensions.y / 2.0f, 0.0f));
-
-	// Assign Camera starting position
-	float maxDimension = std::max({ dimensions.x, dimensions.y, dimensions.z });
-	m_Camera = std::make_shared<OrthographicCamera>(-maxDimension, maxDimension, -maxDimension, maxDimension);
-	m_Camera->SetPosition(modelCenter);
-
-	// Assign Camera Orbit Settings
-	m_OrbitCenter = modelCenter;
-	m_OrbitRadius = maxDimension * 2.0f; // Initial Distance as above
-	m_OrbitAzimuthal = glm::radians(270.0f);
-	m_OrbitPolar = glm::radians(90.0f);
-
-	RecalculateCameraPositionFromSphericalCoords();
+	// Create the camera
+	m_Camera = std::make_shared<OrthographicCamera>(-1.0f, 1.0f, -1.0f, 1.0f);
 }
 
 void ViewportLayer::OnAttach()
@@ -165,6 +139,37 @@ void ViewportLayer::OnImGuiRender()
 }
 
 
+
+void ViewportLayer::LoadModel(const std::string& path, const std::string& name)
+{
+	// Clear current model
+	ClearCurrentModel();
+
+	// Try find model if it has been loaded before
+	m_Model = RESOURCE_MANAGER.GetModel(name);
+
+	// Else try to load it
+	if (!m_Model) m_Model = RESOURCE_MANAGER.LoadModel(path, name);
+
+	// If it loaded successful, recreate all nevessary variables and animations
+	m_Animation = new Animation(path, m_Model);
+	m_Animator = new Animator(m_Animation);
+
+	glm::vec3 modelCenter = m_Model->GetCenter();
+	glm::vec3 dimensions = m_Model->GetDimensions();
+
+	float maxDimension = std::max({ dimensions.x, dimensions.y, dimensions.z });
+	m_Camera->SetProjection(-maxDimension, maxDimension, -maxDimension, maxDimension, -100.0f, 100.0f);
+
+	m_ModelTransform = glm::translate(glm::mat4(1.0f),
+		modelCenter - glm::vec3(0.0f, dimensions.y / 2.0f, 0.0f));
+
+	m_OrbitCenter = modelCenter;
+	m_OrbitRadius = maxDimension * 2.0f;
+	RecalculateCameraPositionFromSphericalCoords();
+}
+
+
 void ViewportLayer::RenderScene(bool isCapturingScreenshot)
 {
 	// Clear the screen. No Transparency for Screenshot mode
@@ -175,26 +180,28 @@ void ViewportLayer::RenderScene(bool isCapturingScreenshot)
 	// Begin scene
 	Renderer::BeginScene(); // Currently calls nothing
 
+	if (m_Model && m_CurrentShader) {
+		/// Bind the Shader and upload any uniforms
+		m_CurrentShader->Bind();
+		m_CurrentShader->UploadUniformMat4("u_ViewProjection", m_Camera->GetViewProjectionMatrix());
+		// shader->UploadUniformFloat3("lightPos", camera->GetPosition()); These are not needed now we only use a 2D Viewport/
+		// shader->UploadUniformFloat3("viewPos", camera->GetPosition());
+		m_CurrentShader->UploadUniformMat4("u_Transform", m_ModelTransform);
 
-	/// Bind the Shader and upload any uniforms
-	m_CurrentShader->Bind();
-	m_CurrentShader->UploadUniformMat4("u_ViewProjection", m_Camera->GetViewProjectionMatrix());
-	// shader->UploadUniformFloat3("lightPos", camera->GetPosition()); These are not needed now we only use a 2D Viewport/
-	// shader->UploadUniformFloat3("viewPos", camera->GetPosition());
-	m_CurrentShader->UploadUniformMat4("u_Transform", m_ModelTransform);
 
+		// Update for any Animation.
+		if (m_Animator) {
+			m_Animator->UpdateAnimation(0.016f);
+			auto transform = m_Animator->GetFinalBoneMatrices();
 
-	// Update for any Animation.
-	if (m_Animator) {
-		m_Animator->UpdateAnimation(0.016f);
-		auto transform = m_Animator->GetFinalBoneMatrices();
-		
-		// Draw Bone Transforms
-		m_CurrentShader->UploadUniformMat4Array("u_BoneTransforms", transform);
+			// Draw Bone Transforms
+			m_CurrentShader->UploadUniformMat4Array("u_BoneTransforms", transform);
 
-		// Draw based on Camera.
-		m_Model.Draw(m_CurrentFragmentShaderType, m_CurrentShader);
+			// Draw based on Camera.
+			m_Model->Draw(m_CurrentFragmentShaderType, m_CurrentShader);
+		}
 	}
+	
 
 	Renderer::EndScene();
 }

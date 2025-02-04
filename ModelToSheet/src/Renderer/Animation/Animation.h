@@ -18,7 +18,7 @@ struct NodeData	 {
 class Animation {
 public:
 	Animation() = default;
-	Animation(const std::string& animationPath, Model* model);
+	Animation(const std::string& animationPath, std::shared_ptr<Model> model);
 
 	Bone* FindBone(const std::string& name);
 

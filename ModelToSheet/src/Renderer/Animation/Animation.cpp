@@ -1,7 +1,7 @@
 #include "pch.h"	
 #include "Animation.h"
 
-Animation::Animation(const std::string& animationPath, Model* model)
+Animation::Animation(const std::string& animationPath, std::shared_ptr<Model>  model)
 {
 	// Importer to triangulate Mesh Data and chcek it exists
 	Assimp::Importer importer;

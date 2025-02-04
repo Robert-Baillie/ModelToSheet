@@ -41,18 +41,14 @@ void UILayer::OnImGuiRender()
     /* Repository and Logging */
     ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y + twoThirdsHeight));
     ImGui::SetNextWindowSize(ImVec2(twoThirdsWidth, oneThirdsHeight));
-    if (ImGui::Begin("Tab Window", nullptr, viewport_flags))
+    if (ImGui::Begin("Repository/Logging", nullptr, viewport_flags))
     {
-        if (ImGui::BeginTabBar("MyTabBar"))
+        if (ImGui::BeginTabBar("Repository/Logging Bar"))
         {
-            // Tab 1: First component
-            if (ImGui::BeginTabItem("Component 1"))
-            {
-                ImGui::Text("This is Component 1");
-                ImGui::Button("Button 1");
-                ImGui::EndTabItem();
-            }
+            // Tab 1: Repository.
+            RenderRepositoryTab();
 
+            // Tab 2: Logging tab
             RenderLoggingTab();
             ImGui::EndTabBar();
         }
@@ -132,6 +128,71 @@ void UILayer::RenderLoggingTab()
         ImGui::EndChild();
 
 
+        ImGui::EndTabItem();
+    }
+}
+
+void UILayer::RenderRepositoryTab()
+{
+    if (ImGui::BeginTabItem("Repository")) {
+
+        
+        // Get the columns that can fit into the repository
+        static float thumbnailSize = 96;   // Can be altered below
+        ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 64, 128);
+
+
+
+        // Start the scrolling Region
+        ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
+        float padding = 16.0f;
+        float cellSize = thumbnailSize + padding;
+        float panelWidth = ImGui::GetContentRegionAvail().x;
+        int columnCount = (int)(panelWidth / cellSize);
+        if (columnCount < 1) columnCount = 1;
+
+        // Set the amount of columns
+        ImGui::Columns(columnCount, 0, false);
+
+        // Back button if not in root directory
+        if (m_CurrentDirectory != m_assetDirectory) {
+            if (ImGui::Button("../", ImVec2(thumbnailSize, thumbnailSize))) {
+                m_CurrentDirectory = m_CurrentDirectory.parent_path();
+            }
+            ImGui::NextColumn();
+        }
+
+        // First show folders
+        for (auto& entry : std::filesystem::directory_iterator(m_CurrentDirectory)) {
+            if (std::filesystem::is_directory(entry)) {
+                std::string folderName = entry.path().filename().string();
+                if (ImGui::Button((folderName + "/").c_str(), ImVec2(thumbnailSize, thumbnailSize))) {
+                    m_CurrentDirectory /= folderName;
+                }
+                ImGui::NextColumn();
+
+            }
+        }
+
+        // Models
+        for (auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory)) {
+            const auto& path = directoryEntry.path();
+            std::string extension = path.extension().string();
+
+            if (extension == ".obj" || extension == ".fbx" || extension == ".gltf" || extension == ".glb" || extension == ".3ds" || extension == ".dae") {
+                std::string filename = path.filename().string();
+                // Load the button
+                if (ImGui::Button(filename.c_str(), ImVec2(thumbnailSize, thumbnailSize))) {
+                    // If clicked, load this model
+                    std::string fullPath = m_CurrentDirectory.string() + "/" + filename;
+                    m_ViewportLayer->LoadModel(fullPath, filename);
+                }
+                ImGui::NextColumn();
+            }
+
+        }
+        ImGui::Columns(1);
+        ImGui::EndChild();
         ImGui::EndTabItem();
     }
 }

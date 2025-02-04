@@ -24,10 +24,21 @@ void Camera::LookAt(const glm::vec3& target)
 OrthographicCamera::OrthographicCamera(float left, float right, float bottom, float top)
 {
 	m_CameraType = Type::Orthographic;
-	m_ProjectionMatrix = glm::ortho(left, right, bottom, top, -100.0f, 100.0f);
+	m_Position = glm::vec3(0.0f);
+	m_Front = glm::vec3(0.0f, 0.0f, -1.0f);
+	m_Up = glm::vec3(0.0f, 1.0f, 0.0f);
+	m_Right = glm::vec3(1.0f, 0.0f, 0.0f);
+
+	SetProjection(left, right, bottom, top, -100.0f, 100.0f);
 	RecalculateViewMatrix();
 }
 
+
+void OrthographicCamera::SetProjection(float left, float right, float bottom, float top, float nearClip, float farClip)
+{
+    m_ProjectionMatrix = glm::ortho(left, right, bottom, top, nearClip, farClip);
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+}
 
 void OrthographicCamera::RecalculateViewMatrix()
 {

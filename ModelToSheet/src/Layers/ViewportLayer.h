@@ -11,14 +11,16 @@ class ViewportLayer : public Layer {
 public:
     ViewportLayer();
     virtual ~ViewportLayer() {
-        delete m_Animation;
-        delete m_Animator;
+        ClearCurrentModel();
     };
 
     virtual void OnAttach() override;
     virtual void OnDetach() override;
     virtual void OnUpdate() override;
     virtual void OnImGuiRender() override;
+
+    // User Functionality
+    void LoadModel(const std::string& path, const std::string& name);
 
     float GetDistance()  { return m_OrbitRadius; }
     float GetAzimuthalAngle()  { return glm::degrees(m_OrbitAzimuthal); } // Convert to degrees
@@ -32,10 +34,11 @@ public:
     }
     void RecalculateCameraPositionFromSphericalCoords();
 
-
+    
 private:
     void RenderScene(bool isCapturingScreenshot = false);
- 
+    
+    void ClearCurrentModel() { delete m_Animation; delete m_Animator; }
 
     // Export Functionality
     void ExportAnimationSpriteSheet();
@@ -53,7 +56,7 @@ private:
     glm::vec2 m_ViewSize = { 0.0f, 0.0f };
 
     // Model settings
-    Model m_Model; // should be a ptr
+    std::shared_ptr<Model> m_Model = nullptr;
     glm::mat4 m_ModelTransform = glm::mat4(1.0f);
 
     // Animation Settings
