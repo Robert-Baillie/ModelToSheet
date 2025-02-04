@@ -46,6 +46,14 @@ void ViewportLayer::OnDetach()
 {
 }
 
+void ViewportLayer::OnEvent(Event& e)
+{
+	 EventDispatcher dispatcher(e);
+	 dispatcher.Dispatch<ModelLoadStartEvent>(BIND_EVENT_FN(ViewportLayer::OnModelLoadStart));
+	 dispatcher.Dispatch<CameraOrbitEvent>(BIND_EVENT_FN(ViewportLayer::OnCameraOrbitChange));
+	 dispatcher.Dispatch<AnimationChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnAnimationChange));
+}
+
 void ViewportLayer::OnUpdate()
 {
 
@@ -155,7 +163,7 @@ void ViewportLayer::LoadModel(const std::string& path, const std::string& name)
 	if (!m_Model) m_Model = RESOURCE_MANAGER.LoadModel(path, name);
 
 	// If it loaded successful, recreate all nevessary variables and animations
-	m_Animator = new Animator;
+	m_Animator = std::make_shared<Animator>();
 
 	for (const auto& [name, anim] : m_Model->GetAnimations()) {
 		m_Animator->AddAnimation(name, anim);	// This will play the first animation added.
@@ -307,6 +315,44 @@ void ViewportLayer::ExportAnimationSpriteSheet()
 	// Restore original shader
 	m_CurrentShader = m_FragmentShaders[originalType];
 	m_CurrentFragmentShaderType = originalType;
+}
+
+
+/* Event Methods */
+bool ViewportLayer::OnModelLoadStart(ModelLoadStartEvent& event)
+{
+	// A model has been clicked in the UI. Load it as intended
+	LoadModel(event.GetPath(), event.GetModelName());
+
+
+	// Annoyingly, we need to cache this model pointer back to UI layer, so call an event back
+	ModelLoadCompleteEvent eventTwo(m_Model, m_Animator);
+	Application::Get().OnEvent(eventTwo);
+
+	// No other events need this, return true.
+	return true;
+}
+
+bool ViewportLayer::OnCameraOrbitChange(CameraOrbitEvent& event)
+{
+	// We do not know which has changed, assign both.
+	// This comes in as a degree value, we want it to be radians
+	float degAngle = glm::clamp(event.GetPolarAngle(), 0.001f, 179.999f);
+	m_OrbitAzimuthal = glm::radians(event.GetAzimuthalAngle());
+	m_OrbitPolar = glm::radians(degAngle);
+	
+	// Recalculate
+	RecalculateCameraPositionFromSphericalCoords();
+	// No other events need this, return true.
+	return true;
+}
+
+bool ViewportLayer::OnAnimationChange(AnimationChangeEvent& event)
+{
+	// New Animation changed. All Animations loaded onto model when it is loaded, so just play by name.
+	m_Animator->PlayAnimation(event.GetAnimationName());
+
+	return true;
 }
 
 

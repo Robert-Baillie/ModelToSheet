@@ -2,6 +2,9 @@
 #include "Layer.h"
 #include "Core/Log.h"
 
+#include "Renderer/Model.h"	
+#include "Events/LayerEvents.h"
+
 class UILayer : public Layer {
 public:
 	UILayer()
@@ -25,6 +28,7 @@ public:
 
 	virtual void OnAttach() override;
 	virtual void OnDetach() override;
+	virtual void OnEvent(Event& e) override;
 	virtual void OnUpdate() override;
 	virtual void OnImGuiRender() override;
 
@@ -34,6 +38,10 @@ private:
 	void RenderRepositoryTab();
 	void RenderModelControls();
 	void RenderAnimationControls();
+
+
+	// Event functions
+	bool OnModelLoadComplete(ModelLoadCompleteEvent& event);
 
 private:
 	struct ViewPreset {
@@ -45,8 +53,15 @@ private:
 	std::vector<ViewPreset> m_Presets;
 
 private:
+	float m_CurrentPolarAngle = 90;
+	float m_CurrentAzimuthalAngle = 270;
+
 
 	// Assign directories
 	const std::filesystem::path m_assetDirectory;
 	std::filesystem::path m_CurrentDirectory;
+
+	// Cached model
+	std::shared_ptr<Model> m_Model = nullptr;
+	std::shared_ptr<Animator> m_Animator = nullptr;
 };

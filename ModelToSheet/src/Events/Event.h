@@ -11,7 +11,9 @@ enum class EventType {
 	WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
 	AppTick, AppUpdate, AppRender,
 	KeyPressed, KeyReleased, KeyTyped,
-	MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
+	MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
+	ModelLoadStart, ModelLoadComplete, 
+	CameraOrbitChanged, AnimationChange
 };
 
 // Define the Event Categories. Use BIT flags for efficiency in runtime.
@@ -21,7 +23,9 @@ enum  EventCategory {
 	EventCategoryInput = BIT(1),		// 1 << 1 = 00010
 	EventCategoryKeyboard = BIT(2),		// 1 << 2 = 00100
 	EventCategoryMouse = BIT(3),		// 1 << 3 = 01000
-	EventCategoryMouseButton = BIT(4)	// 1 << 4 = 10000
+	EventCategoryMouseButton = BIT(4),	// 1 << 4 = 10000
+	EventCategoryLayerModel = BIT(5),
+	EventCategoryLayerOther = BIT(6),
 };
 
 class Event {

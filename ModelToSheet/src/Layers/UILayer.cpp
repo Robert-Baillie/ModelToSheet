@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "UILayer.h"
 
+#include "Core/Application.h"
+#include "Events/LayerEvents.h"
+
 #include "imgui.h"
+
 
 
 void UILayer::OnAttach()
@@ -10,6 +14,12 @@ void UILayer::OnAttach()
 
 void UILayer::OnDetach()
 {
+}
+
+void UILayer::OnEvent(Event& e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<ModelLoadCompleteEvent>(BIND_EVENT_FN(UILayer::OnModelLoadComplete));
 }
 
 void UILayer::OnUpdate()
@@ -160,9 +170,11 @@ void UILayer::RenderRepositoryTab()
                 std::string filename = path.filename().string();
                 // Load the button
                 if (ImGui::Button(filename.c_str(), ImVec2(thumbnailSize, thumbnailSize))) {
-                    // If clicked, load this model
+                    // If clicked, load this model by sending an event
                     std::string fullPath = m_CurrentDirectory.string() + "/" + filename;
-                    m_ViewportLayer->LoadModel(fullPath, filename);
+                    ModelLoadStartEvent event(fullPath, filename);
+                    Application::Get().OnEvent(event);
+
                 }
                 ImGui::NextColumn();
             }
@@ -176,27 +188,36 @@ void UILayer::RenderRepositoryTab()
 
 void UILayer::RenderModelControls()
 {
-    float polarDegrees 
-    float azimuthalDegrees =
+    float polarDegrees = m_CurrentPolarAngle; // Cached angle
+    float azimuthalDegrees = m_CurrentAzimuthalAngle;
 
 
     if (ImGui::SliderFloat("Vertical Angle", &polarDegrees, 0.0f, 180.0f))
     {
-       
+       // The polar angle has been changed. Dispatch an event
+        CameraOrbitEvent event(polarDegrees, azimuthalDegrees);
+        Application::Get().OnEvent(event);
+        
+        m_CurrentPolarAngle = polarDegrees;
     }
 
     if (ImGui::SliderFloat("Horizontal Angle", &azimuthalDegrees, 0.0f, 360.0f))
     {
+        CameraOrbitEvent event(polarDegrees, azimuthalDegrees);
+        Application::Get().OnEvent(event);
+
+        m_CurrentAzimuthalAngle = azimuthalDegrees;
     }
 
     // Render each of the buttons
     for (int i = 0; i < m_Presets.size(); i++) {
         if (ImGui::Button(m_Presets[i].Name.c_str(), ImVec2(60, 25))) {
-            // Button hit, set the angles
-            m_ViewportLayer->SetPolarAngle(m_Presets[i].PolarAngle);
-            m_ViewportLayer->SetAzimuthalAngle(m_Presets[i].AzimuthalAngle);
-            m_ViewportLayer->RecalculateCameraPositionFromSphericalCoords();
+            // Button hit, set the angles and send the event
+            CameraOrbitEvent event(m_Presets[i].PolarAngle, m_Presets[i].AzimuthalAngle);
+            Application::Get().OnEvent(event);
 
+            m_CurrentPolarAngle = m_Presets[i].PolarAngle;
+            m_CurrentAzimuthalAngle = m_Presets[i].AzimuthalAngle;
         }
     }
 
@@ -206,8 +227,7 @@ void UILayer::RenderModelControls()
 void UILayer::RenderAnimationControls()
 {
     // Check if ther is a model
-    auto model = m_ViewportLayer->GetCurrentModel();
-    if (!model) {
+    if (!m_Model) {
         ImGui::Text("No model loaded.");
         return;
     }
@@ -215,8 +235,8 @@ void UILayer::RenderAnimationControls()
     // Get the animations and model.
     ImGui::SeparatorText("Animations");
 
-    // Could cache this on an event so we do not need to grab it every frame. Infact all buttons called could be cached beforehand.
-    const auto& animations = model->GetAnimations();
+   
+    const auto& animations = m_Model->GetAnimations();
 
     if (animations.empty()) {
         ImGui::Text("No animations available.");
@@ -226,9 +246,13 @@ void UILayer::RenderAnimationControls()
     // Loop through the animations.
     if (ImGui::BeginChild("AnimationList", ImVec2(0, 120), true)) {
         for (const auto& [name, anim] : animations) {
-            if (ImGui::Selectable(name.c_str(), m_ViewportLayer->GetCurrentAnimation()->GetName() == name)) {
-                m_ViewportLayer->PlayAnimation(name); // Once again should be an event.
+
+            if (ImGui::Selectable(name.c_str(), m_Animator->GetCurrentAnimation()->GetName() == name)) {
+                // This has been chosen, change this animation
+                AnimationChangeEvent event(name);
+                Application::Get().OnEvent(event);
             }
+
 
             // Show animation details on hover
             if (ImGui::IsItemHovered()) {
@@ -239,7 +263,21 @@ void UILayer::RenderAnimationControls()
             }
         }
 
+        ImGui::EndChild();
     }
 
 
+}
+
+// Event functions
+
+
+bool UILayer::OnModelLoadComplete(ModelLoadCompleteEvent& event)
+{
+    // Simply cache the model. Animator will have been loaded too.
+    m_Model = event.GetModel();
+    m_Animator = event.GetAnimator();
+
+    // Nothing else needs this
+    return true;
 }
