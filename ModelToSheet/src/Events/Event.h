@@ -13,7 +13,8 @@ enum class EventType {
 	KeyPressed, KeyReleased, KeyTyped,
 	MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
 	ModelLoadStart, ModelLoadComplete, 
-	CameraOrbitChanged, AnimationChange
+	AnimationChange, AnimationFPSChange,
+	CameraOrbitChanged,	Export
 };
 
 // Define the Event Categories. Use BIT flags for efficiency in runtime.
@@ -25,7 +26,8 @@ enum  EventCategory {
 	EventCategoryMouse = BIT(3),		// 1 << 3 = 01000
 	EventCategoryMouseButton = BIT(4),	// 1 << 4 = 10000
 	EventCategoryLayerModel = BIT(5),
-	EventCategoryLayerOther = BIT(6),
+	EventCategoryLayerAnimation = BIT(6),
+	EventCategoryLayerOther = BIT(7),
 };
 
 class Event {

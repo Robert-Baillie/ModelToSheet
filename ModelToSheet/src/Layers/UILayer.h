@@ -50,10 +50,13 @@ private:
 		float AzimuthalAngle;
 		std::string Name;
 	};
+	
+
+private:
+
 	// Presets for buttons. Initialised in Constructor.
 	std::vector<ViewPreset> m_Presets;
 
-private:
 	float m_CurrentPolarAngle = 90;
 	float m_CurrentAzimuthalAngle = 270;
 
@@ -65,4 +68,10 @@ private:
 	// Cached model
 	std::shared_ptr<Model> m_Model = nullptr;
 	std::shared_ptr<Animator> m_Animator = nullptr;
+
+	// Animation controls
+	std::vector<int> m_SelectedFrames;
+	bool m_IsAnimationPlaying = false;
+	float m_FPS = 60.0f;
+	int m_CurrentPreviewFrame = 0;
 };

@@ -38,6 +38,8 @@ private:
     bool OnModelLoadStart(ModelLoadStartEvent& event);
     bool OnCameraOrbitChange(CameraOrbitEvent& event);
     bool OnAnimationChange(AnimationChangeEvent& event);
+    bool OnExport(ExportEvent& event);
+    bool OnFPSChanged(AnimationFPSChangeEvent& event);
 
 private:
     // Camera
@@ -61,9 +63,8 @@ private:
     Animation* m_CurrentAnimation = nullptr;
 
     // Times
-    float m_DeltaTime= 0.016f;
-    float m_LastFrameTime = 0.0f;
-
+    float m_FrameTime = 0.016f; // 60fps
+    bool m_IsPlaying = true;
 
     // Flow control
     FragmentShaderType m_CurrentFragmentShaderType = FragmentShaderType::Diffuse;

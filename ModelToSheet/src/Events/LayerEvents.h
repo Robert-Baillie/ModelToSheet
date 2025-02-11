@@ -94,9 +94,45 @@ public:
 	}
 
 	EVENT_CLASS_TYPE(AnimationChange)
-	EVENT_CLASS_CATEGORY(EventCategoryLayerOther)
+	EVENT_CLASS_CATEGORY(EventCategoryLayerAnimation)
 private:
 	std::string m_AnimationName;
+};
+
+// Animation Change - A model is currently active, the user has changed the animation they have linked to them.
+class AnimationFPSChangeEvent : public Event {
+public:
+	AnimationFPSChangeEvent(const float newFPS)
+		: m_FPS(newFPS) {}
+
+	const float GetFPS() { return m_FPS; }
+
+	std::string ToString() const override {
+		std::stringstream ss;
+		ss << "AnimationFPSChangeEvent new FPS: " << m_FPS;
+		return ss.str();
+	}
+
+	EVENT_CLASS_TYPE(AnimationFPSChange)
+		EVENT_CLASS_CATEGORY(EventCategoryLayerAnimation)
+private:
+	float m_FPS;
+};
+
+// Export Event - No data to be passed, just need to know that the button has been pressed.
+class ExportEvent : public Event {
+public:
+	ExportEvent(){}
+
+
+	std::string ToString() const override {
+		std::stringstream ss;
+		ss << "ExportEvent" ;
+		return ss.str();
+	}
+
+	EVENT_CLASS_TYPE(Export)
+		EVENT_CLASS_CATEGORY(EventCategoryLayerOther)
 };
 
 //// Shader change event. On the UI the user has changed the type of shader being used

@@ -285,6 +285,7 @@ void UILayer::RenderAnimationControls()
         return;
     }
 
+    /* Animation List */
     // Loop through the animations.
     if (ImGui::BeginChild("AnimationList", ImVec2(0, 120), true)) {
 
@@ -309,6 +310,26 @@ void UILayer::RenderAnimationControls()
         ImGui::EndChild();
     }
 
+
+    ImGui::SeparatorText("Animation Controls");
+    /* Frame Selection  Control */
+    if (ImGui::BeginChild("Frame selection", ImVec2(0, 300), true)) {
+        // Slider to choose FPS
+        if (ImGui::SliderFloat("FPS", &m_FPS, 10.0f, 120.0f)) {
+            AnimationFPSChangeEvent event(m_FPS);
+            Application::Get().OnEvent(event);
+
+        }
+
+        
+
+
+        ImGui::EndChild();
+
+
+    }
+
+
 }
 
 void UILayer::RenderExportControls()
@@ -323,8 +344,14 @@ void UILayer::RenderExportControls()
     ImVec2 windowSize = ImGui::GetWindowSize();
     ImGui::SetCursorPos(ImVec2(windowSize.x - buttonWidth - 20.0f, windowSize.y - buttonHeight - 20.0f));   // Assign to the bottom right, adjust by width and padding
 
+    bool canDisable = (m_Model != nullptr);
+    if (!canDisable) ImGui::BeginDisabled(true);
     if (ImGui::Button("Export", ImVec2(buttonWidth, buttonHeight))) {
-        
+        ExportEvent event;
+        Application::Get().OnEvent(event);
+    }
+    if (!canDisable) {
+        ImGui::EndDisabled();
     }
 
     ImGui::SameLine();

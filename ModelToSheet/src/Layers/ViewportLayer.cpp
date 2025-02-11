@@ -52,6 +52,8 @@ void ViewportLayer::OnEvent(Event& e)
 	 dispatcher.Dispatch<ModelLoadStartEvent>(BIND_EVENT_FN(ViewportLayer::OnModelLoadStart));
 	 dispatcher.Dispatch<CameraOrbitEvent>(BIND_EVENT_FN(ViewportLayer::OnCameraOrbitChange));
 	 dispatcher.Dispatch<AnimationChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnAnimationChange));
+	 dispatcher.Dispatch<ExportEvent>(BIND_EVENT_FN(ViewportLayer::OnExport));
+	 dispatcher.Dispatch<AnimationFPSChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnFPSChanged));
 }
 
 void ViewportLayer::OnUpdate()
@@ -115,13 +117,11 @@ void ViewportLayer::OnImGuiRender()
 	/***** RENDERING THE BUTTONS *****/
 
 	// Overlaying the buttons. Get the upper and lower limits of the box
-	ImVec2 start = ImGui::GetItemRectMin(); // Top Left
-	ImVec2 end = ImGui::GetItemRectMax(); // Bottom right
-	float buttonY = start.y + 10; // 10px from the top left
-	float buttonX = start.x + 10;
+	float paddingX = 10.0f;
+	float paddingY = 25.0f;
 
 	// Position the buttons at the top of the window
-	ImGui::SetCursorScreenPos(ImVec2(buttonX, buttonY));
+	ImGui::SetCursorScreenPos(ImVec2(viewport->WorkPos.x + paddingX, viewport->WorkPos.y + paddingY));
 	if (ImGui::Button("Diffuse")) {
 		m_CurrentShader =	m_FragmentShaders[FragmentShaderType::Diffuse];
 		m_CurrentFragmentShaderType = FragmentShaderType::Diffuse;
@@ -133,14 +133,18 @@ void ViewportLayer::OnImGuiRender()
 		m_CurrentFragmentShaderType = FragmentShaderType::Normal;
 
 	}
-	buttonY = end.y - 50; 
-	buttonX = end.x - 75;
 
-	ImGui::SetCursorScreenPos(ImVec2(buttonX, buttonY));
-	if (ImGui::Button("Export Animation")) {
-		ExportAnimationSpriteSheet();
+
+
+	/* Pause/Play button */
+	ImVec2 buttonSize(100, 30);
+	ImGui::SetCursorScreenPos(ImVec2(
+		ImGui::GetWindowPos().x + (sizeIm.x - 100) * 0.5f,
+		ImGui::GetWindowPos().y + sizeIm.y - 40
+	));
+	if (ImGui::Button(m_IsPlaying ? "Pause" : "Play")) {
+		m_IsPlaying = !m_IsPlaying;
 	}
-
 	ImGui::End();
 
 	ImGui::PopStyleVar();
@@ -204,16 +208,16 @@ void ViewportLayer::RenderScene(bool isCapturingScreenshot)
 
 
 		// Update for any Animation.
-		if (m_Animator) {
-			m_Animator->UpdateAnimation(0.016f);
+		if (m_Animator  &&m_IsPlaying) {
+			m_Animator->UpdateAnimation(m_FrameTime);
 			auto transform = m_Animator->GetFinalBoneMatrices();
 
 			// Draw Bone Transforms
 			m_CurrentShader->UploadUniformMat4Array("u_BoneTransforms", transform);
-
-			// Draw based on Camera.
-			m_Model->Draw(m_CurrentFragmentShaderType, m_CurrentShader);
 		}
+
+		// Draw based on Camera.
+		m_Model->Draw(m_CurrentFragmentShaderType, m_CurrentShader);
 	}
 	
 
@@ -260,7 +264,7 @@ void ViewportLayer::ExportAnimationSpriteSheet()
 		// Loop through the frames for this shader
 		for (int frame = 0; frame < frameCount; frame++) {
 			// Go to the next frame. We are simulating 60 fps below
-			m_Animator->UpdateAnimation(0.016f);
+			m_Animator->UpdateAnimation(m_FrameTime);
 
 			// Redner the scene based on this frame
 			m_Framebuffer->Bind();
@@ -357,6 +361,19 @@ bool ViewportLayer::OnAnimationChange(AnimationChangeEvent& event)
 
 	return true;
 }
+
+bool ViewportLayer::OnExport(ExportEvent& event)
+{
+	ExportAnimationSpriteSheet();
+	return true;
+}
+
+bool ViewportLayer::OnFPSChanged(AnimationFPSChangeEvent& event)
+{
+	m_FrameTime = (1 / event.GetFPS());
+	return true;
+}
+
 
 
 
