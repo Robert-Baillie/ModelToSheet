@@ -70,8 +70,8 @@ private:
 	std::shared_ptr<Animator> m_Animator = nullptr;
 
 	// Animation controls
-	std::vector<int> m_SelectedFrames;
+	int m_SliderValue = 0;
+	std::vector<bool> m_KeyFrames;
 	bool m_IsAnimationPlaying = false;
-	float m_FPS = 60.0f;
 	int m_CurrentPreviewFrame = 0;
 };

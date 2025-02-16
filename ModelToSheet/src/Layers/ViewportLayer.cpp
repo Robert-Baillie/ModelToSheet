@@ -23,6 +23,7 @@ ViewportLayer::ViewportLayer() : Layer("ViewportLayer")
 
 void ViewportLayer::OnAttach()
 {
+
 	// Create the framebuffer with the size of the desired texture width
 	FramebufferSpecification spec;
 	spec.Width = m_TextureWidth;
@@ -53,11 +54,31 @@ void ViewportLayer::OnEvent(Event& e)
 	 dispatcher.Dispatch<CameraOrbitEvent>(BIND_EVENT_FN(ViewportLayer::OnCameraOrbitChange));
 	 dispatcher.Dispatch<AnimationChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnAnimationChange));
 	 dispatcher.Dispatch<ExportEvent>(BIND_EVENT_FN(ViewportLayer::OnExport));
-	 dispatcher.Dispatch<AnimationFPSChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnFPSChanged));
+	 dispatcher.Dispatch<AnimationKeyChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnKeyFrameChanged));
+	 dispatcher.Dispatch<KeyframeChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnKeyFrameSliderValueChanged));
 }
 
 void ViewportLayer::OnUpdate()
 {
+	// Handle any preview mode
+	if (m_KeyframePreviewMode && !m_KeyFrameIndexList.empty()) {
+		m_AccumulatedPreviewTime += ImGui::GetIO().DeltaTime;
+		auto animation = m_Animator->GetCurrentAnimation();
+
+		
+		float keyframeDisplayTime = 1.0f / m_PreviewSamplesPerSecond;
+
+		if (m_AccumulatedPreviewTime >= keyframeDisplayTime) {
+			m_AccumulatedPreviewTime = 0.0f;
+			m_CurrentPreviewFrame = (m_CurrentPreviewFrame + 1) % m_KeyFrameIndexList.size();
+
+			// Set the exact keyframe time and update without delta time
+			float keyFrameTime = animation->GetKeyframeTime(m_KeyFrameIndexList[m_CurrentPreviewFrame]);
+			m_Animator->SetCurrentTime(keyFrameTime);
+			m_Animator->UpdateAnimation(0.0f);  // Using 0.0f prevents further animation
+		}
+	}
+	
 
 	// Render OrthograpicView
 	m_Framebuffer->Bind();
@@ -107,7 +128,8 @@ void ViewportLayer::OnImGuiRender()
 
 
 	int texID = m_Framebuffer->GetColorAttachmentRendererID();
-	ImVec2 textureSize(m_TextureWidth, m_TextureHeight);
+	int scale = 512 / m_TextureWidth;
+	ImVec2 textureSize(m_TextureWidth * scale, m_TextureHeight * scale);
 	ImVec2 winPos = ImGui::GetCursorScreenPos();
 	ImVec2 center = ImVec2(winPos.x + (sizeIm.x - textureSize.x) * 0.5f,
 		winPos.y + (sizeIm.y - textureSize.y) * 0.5f);
@@ -139,12 +161,40 @@ void ViewportLayer::OnImGuiRender()
 	/* Pause/Play button */
 	ImVec2 buttonSize(100, 30);
 	ImGui::SetCursorScreenPos(ImVec2(
-		ImGui::GetWindowPos().x + (sizeIm.x - 100) * 0.5f,
+		ImGui::GetWindowPos().x + (sizeIm.x - 250) * 0.5f,
 		ImGui::GetWindowPos().y + sizeIm.y - 40
 	));
 	if (ImGui::Button(m_IsPlaying ? "Pause" : "Play")) {
 		m_IsPlaying = !m_IsPlaying;
+		m_KeyframePreviewMode = false; // Exit preview mode when toggling back
 	}
+	
+	/* Preview button on the same line */
+	ImGui::SameLine();
+	if (!m_KeyFrameIndexList.empty() && ImGui::Button(m_KeyframePreviewMode ? "Stop Preview" : "Preview Keyframes")) {
+		m_KeyframePreviewMode = !m_KeyframePreviewMode;
+
+		if (m_KeyframePreviewMode) m_IsPlaying = false;
+		else m_IsPlaying = true;
+
+		if (!m_KeyFrameIndexList.empty())	m_CurrentPreviewFrame = m_KeyFrameIndexList[0]; // Start at the first frame
+
+		m_AccumulatedPreviewTime = 0.0f;
+	}
+
+	/* Preview speed control */
+	if (m_KeyframePreviewMode) {
+		ImGui::SameLine();
+		float displayTime = 1.0f / m_PreviewSamplesPerSecond;
+		if (ImGui::DragFloat("Samples/sec", &m_PreviewSamplesPerSecond, 0.1f, 1.0f, 60.0f)) {
+			// Clamp to reasonable values
+			m_PreviewSamplesPerSecond = std::clamp(m_PreviewSamplesPerSecond, 1.0f, 60.0f);
+		}
+	}
+
+
+	/* Show the export warning */
+	if (m_ShowExportWarning) ShowExportWarning();
 	ImGui::End();
 
 	ImGui::PopStyleVar();
@@ -208,11 +258,13 @@ void ViewportLayer::RenderScene(bool isCapturingScreenshot)
 
 
 		// Update for any Animation.
-		if (m_Animator  &&m_IsPlaying) {
-			m_Animator->UpdateAnimation(m_FrameTime);
-			auto transform = m_Animator->GetFinalBoneMatrices();
+		if (m_Animator  && (m_IsPlaying || m_KeyframePreviewMode)) {
+			// If playing we want to simply update by the frame time
+			if (m_IsPlaying) m_Animator->UpdateAnimation(m_FrameTime);
 
-			// Draw Bone Transforms
+			// if playing and preview we still need to update both transform and shader.
+			// In preview mode the time has already been updated for us
+			auto transform = m_Animator->GetFinalBoneMatrices();
 			m_CurrentShader->UploadUniformMat4Array("u_BoneTransforms", transform);
 		}
 
@@ -240,88 +292,109 @@ void ViewportLayer::RecalculateCameraPositionFromSphericalCoords()
 
 void ViewportLayer::ExportAnimationSpriteSheet()
 {
-	// TEST FOR NOW
-	int frameCount = 25; // How many we are capturing, this can be defined by the user
+	if (!m_Animator || !m_Animator->GetCurrentAnimation()) return;
 
-	float originalTime = m_Animator->GetCurrentTime(); 
-	int originalFrame = m_Animator->GetCurrentFrame(); 
-
-	// Store the original shader type to redisplay at the end. Get the shaderTypes we want to export into files.
+	// Get animations, key count and original types so we can revert back to them after exporting
+	auto animation = m_Animator->GetCurrentAnimation();
+	bool isPlaying = m_IsPlaying;
+	// int keyframeCount = animation->GetKeyframeCount(); // To export all
+	int keyframeCount = m_KeyFrameIndexList.size();
+	float originalTime = m_Animator->GetCurrentTime(); // Overriding a define here?
 	FragmentShaderType originalType = m_CurrentFragmentShaderType;
-	std::vector<FragmentShaderType> shaderTypes = { FragmentShaderType::Diffuse, FragmentShaderType::Normal };
+	m_IsPlaying = true;
+	// Get the shader types to loop over
+	std::vector<FragmentShaderType> shaderTypes = {
+		FragmentShaderType::Diffuse,
+		FragmentShaderType::Normal
+	};
 
-	// Looping over these types
+
+
+	// Loop over these shader types and export into their own screenshots.
 	for (auto shaderType : shaderTypes) {
-		// Assign the current shader based n this type.
+		// ASsign shader and type for rendering
 		m_CurrentShader = m_FragmentShaders[shaderType];
 		m_CurrentFragmentShaderType = shaderType;
 
-		// We want to export the image, for this we need to have a set of pixel data that is large enough to store the width of each frame, by the height, but the size of a char (4) and by the amount of frames being captured.
-		std::vector<unsigned char> spriteSheetPixels(m_TextureWidth * m_TextureHeight * 4 * frameCount);
-		
-		
+		// Store the data based on ALL keyframes
+		std::vector<unsigned char> spriteSheetPixels(
+			m_TextureWidth * m_TextureHeight * 4 * keyframeCount
+		);
 
-		// Loop through the frames for this shader
-		for (int frame = 0; frame < frameCount; frame++) {
-			// Go to the next frame. We are simulating 60 fps below
-			m_Animator->UpdateAnimation(m_FrameTime);
+		// Loop over each key frame and capture its data.
+		for (int i = 0; i < keyframeCount; i++) {
+			// Get the time of the keyframe and assign this to the animator.
+			float keyFrameTime = animation->GetKeyframeTime(m_KeyFrameIndexList[i]); // mKeyFramList[i] holds the index of what the user wants to export
+			m_Animator->SetCurrentTime(keyFrameTime);
 
-			// Redner the scene based on this frame
+			// Bind the framebuffer and render this data
 			m_Framebuffer->Bind();
 			RenderScene();
 
-			// Read the pixels of thisframe and temporarily store
+			// Grab the infomation from the frame buffer and read it into the framepixels.
 			std::vector<unsigned char> framePixels(m_TextureWidth * m_TextureHeight * 4);
 			RenderCommand::ReadPixels(m_TextureWidth, m_TextureHeight, framePixels);
 			m_Framebuffer->Unbind();
 
-			// Add this into the final spritesheet pixels
+			// Now that is stored, assign it into the sprite sheet as above.
+			// Copy code below exports it into the spritesheet data, whilst flipping the points
 			for (int y = 0; y < m_TextureHeight; y++) {
 				size_t destOffset =
-					y * (m_TextureWidth * frameCount * 4) +  // Start of row y in the sprite sheet
-					frame * (m_TextureWidth * 4);            // Horizontal position for this frame
+					y * (m_TextureWidth * keyframeCount * 4) +
+					i * (m_TextureWidth * 4);
 
 				memcpy(
-					spriteSheetPixels.data() + destOffset,	// Destination
+					spriteSheetPixels.data() + destOffset,
 					framePixels.data() + ((m_TextureHeight - 1 - y) * m_TextureWidth * 4),
 					m_TextureWidth * 4
 				);
 			}
-
-			
 		}
-		
 
-		// Save the sprite sheet into destination screenshots. Making sure that screen shots exists
-		std::string filename = fmt::format("{}_animation_spritesheet.png", Shader::GetShaderTypeName(shaderType));
+		// Now all the info has been put into the sprite sheet, we can save this into the screenshots folder
+		std::string filename = fmt::format(
+			"{}_keyframe_spritesheet.png",
+			Shader::GetShaderTypeName(shaderType)
+		);
 		std::string executablePath = std::filesystem::current_path().string();
 		std::string fullPath = executablePath + "/Screenshots/" + filename;
-		std::filesystem::create_directories(std::filesystem::path(fullPath).parent_path());
 		
+		// If no screenshot folder, create it
+		std::filesystem::create_directories(
+			std::filesystem::path(fullPath).parent_path()
+		);
 
+		// STBI to write this into the path
 		stbi_write_png(
 			fullPath.c_str(),
-			m_TextureWidth * frameCount,  // Total width is frames side by side
+			m_TextureWidth * keyframeCount,
 			m_TextureHeight,
 			4,
 			spriteSheetPixels.data(),
-			m_TextureWidth * 4 * frameCount
+			m_TextureWidth * 4 * keyframeCount
 		);
 
-		// Restore the time for the next shader
 		m_Animator->SetCurrentTime(originalTime);
-
-		
-
 	}
 
-	// Restore the time for the users seemless experience
-	m_Animator->SetCurrentTime(originalTime);
-
-	// Restore original shader
+	// Restore original state
+	m_IsPlaying = isPlaying;
 	m_CurrentShader = m_FragmentShaders[originalType];
 	m_CurrentFragmentShaderType = originalType;
+}
 
+void ViewportLayer::ShowExportWarning()
+{
+	ImGui::OpenPopup("Export Warning");
+
+	if (ImGui::BeginPopupModal("Export Warning", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		ImGui::Text("No frames selected! Please select at least one frame before exporting.");
+		if (ImGui::Button("OK")) {
+			m_ShowExportWarning = false;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 }
 
 
@@ -330,7 +403,9 @@ bool ViewportLayer::OnModelLoadStart(ModelLoadStartEvent& event)
 {
 	// A model has been clicked in the UI. Load it as intended
 	LoadModel(event.GetPath(), event.GetModelName());
-
+	m_IsPlaying = true;
+	m_KeyFrameIndexList.clear();
+	m_KeyframePreviewMode = false;
 
 	// Annoyingly, we need to cache this model pointer back to UI layer, so call an event back
 	ModelLoadCompleteEvent eventTwo(m_Model, m_Animator);
@@ -358,19 +433,46 @@ bool ViewportLayer::OnAnimationChange(AnimationChangeEvent& event)
 {
 	// New Animation changed. All Animations loaded onto model when it is loaded, so just play by name.
 	m_Animator->PlayAnimation(event.GetAnimationName());
-
+	m_IsPlaying = true;
+	m_KeyFrameIndexList.clear();
+	m_KeyframePreviewMode = false;
 	return true;
 }
 
 bool ViewportLayer::OnExport(ExportEvent& event)
 {
+	if (m_KeyFrameIndexList.empty()) {
+		m_ShowExportWarning = true;
+		return true;
+	}
+
 	ExportAnimationSpriteSheet();
 	return true;
 }
 
-bool ViewportLayer::OnFPSChanged(AnimationFPSChangeEvent& event)
+bool ViewportLayer::OnKeyFrameChanged(AnimationKeyChangeEvent& event)
 {
-	m_FrameTime = (1 / event.GetFPS());
+	// Copy straight into this index list
+	m_KeyFrameIndexList = event.GetIndexList();
+
+	// nothing else needs this
+	return true;
+}
+
+bool ViewportLayer::OnKeyFrameSliderValueChanged(KeyframeChangeEvent& event)
+{
+	// Switch to true to make sure it renders
+	m_IsPlaying = true;
+
+	// Get the animation time and start playing
+	auto time = m_Animator->GetCurrentAnimation()->GetKeyframeTime(event.GetIndex());
+	m_Animator->SetCurrentTime(time);
+	m_Animator->UpdateAnimation(0.0f);
+	RenderScene();
+
+	// Switch to false playing so it stays at the frame.
+	m_IsPlaying = false;
+	m_KeyframePreviewMode = false;
 	return true;
 }
 

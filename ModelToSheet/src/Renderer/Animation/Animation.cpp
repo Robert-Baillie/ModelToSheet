@@ -33,6 +33,42 @@ Bone* Animation::FindBone(const std::string& name)
 	else return &(*iter);
 }
 
+int Animation::GetKeyframeCount() const
+{
+	// Initialise
+		int maxKeyFrames = 0;
+
+	// Loop through the bones and return the maximum frame count of these
+	for (const auto& bone : m_Bones)
+	{
+		maxKeyFrames = std::max(maxKeyFrames, std::max({
+		bone.GetNumPositionKeys(),
+		bone.GetNumRotationKeys(),
+		bone.GetNumScalingKeys()
+			}));
+	}
+	return maxKeyFrames;
+}
+
+float Animation::GetKeyframeTime(int keyframeIndex) const
+{
+	if (m_Bones.empty()) return 0.0f;
+
+	// Find the first bone with this keybone frame index
+	for (const auto& bone : m_Bones) {
+		if (keyframeIndex < bone.GetNumPositionKeys()) {
+			return bone.GetPositionKeyTime(keyframeIndex);
+		}
+		if (keyframeIndex < bone.GetNumRotationKeys()) {
+			return bone.GetRotationKeyTime(keyframeIndex);
+		}
+		if (keyframeIndex < bone.GetNumScalingKeys()) {
+			return bone.GetScaleKeyTime(keyframeIndex);
+		}
+	}
+	return 0.0f;
+}
+
 void Animation::ReadMissingBones(const aiAnimation* animation, Model& model)
 {
 	// Try to find any missing bones.

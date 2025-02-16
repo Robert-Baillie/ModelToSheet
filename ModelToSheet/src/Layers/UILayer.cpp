@@ -24,6 +24,7 @@ void UILayer::OnEvent(Event& e)
 
 void UILayer::OnUpdate()
 {
+   
 }
 
 void UILayer::OnImGuiRender()
@@ -76,7 +77,6 @@ void UILayer::OnImGuiRender()
         RenderModelControls();
 
         RenderAnimationControls();
-
         RenderExportControls();
         
         ImGui::End();
@@ -295,6 +295,11 @@ void UILayer::RenderAnimationControls()
                 // This has been chosen, change this animation
                 AnimationChangeEvent event(name);
                 Application::Get().OnEvent(event);
+
+                // Should load by now, find the new animation and resize the slider.
+                m_KeyFrames.clear();
+                m_KeyFrames.resize(m_Animator->GetCurrentAnimation()->GetKeyframeCount(), false);
+                m_SliderValue = 0;
             }
 
 
@@ -302,7 +307,7 @@ void UILayer::RenderAnimationControls()
             if (ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
                 ImGui::Text("Duration: %.2f s", anim->GetDuration() / anim->GetTicksPerSecond());
-                ImGui::Text("Frames: %d", anim->GetFrameCount());
+                ImGui::Text("Frames: %d", anim->GetKeyframeCount());
                 ImGui::EndTooltip();
             }
         }
@@ -314,22 +319,50 @@ void UILayer::RenderAnimationControls()
     ImGui::SeparatorText("Animation Controls");
     /* Frame Selection  Control */
     if (ImGui::BeginChild("Frame selection", ImVec2(0, 300), true)) {
-        // Slider to choose FPS
-        if (ImGui::SliderFloat("FPS", &m_FPS, 10.0f, 120.0f)) {
-            AnimationFPSChangeEvent event(m_FPS);
+
+        // Integer Slider to show the current KeyFrame
+        ImGui::Text("KeyFrames: ");
+        ImGui::NewLine(); // Space down a little
+        if (ImGui::SliderInt("##KeyFrames", &m_SliderValue, 0, (m_KeyFrames.size() - 1))) {
+            KeyframeChangeEvent event(m_SliderValue);
+            Application::Get().OnEvent(event);
+
+            // As with viewport player, this is now not playing in favour of showing the user the slider.
+            m_IsAnimationPlaying = false;
+        }
+        ImVec2 p_min = ImGui::GetItemRectMin();
+        ImVec2 p_max = ImGui::GetItemRectMax();
+        // Display Orange circles for values which are checked
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        float slider_width = p_max.x - p_min.x;
+
+        // Start by looping over the length of the keyframes
+        for (int i = 0; i < m_KeyFrames.size(); i++) {
+            // If the value is checked, then draw the circle
+            if (m_KeyFrames[i]) {
+                float pos_x = p_min.x + ((float)i / (m_KeyFrames.size() - 1)) * slider_width;
+                draw_list->AddCircleFilled(ImVec2(pos_x, p_min.y - 10), 5.0f, IM_COL32(255, 165, 0, 255));  // Orange circle
+            }
+        }
+
+        // Render a single check box. If the check box is check according to the current slider value then display it as clicked.
+        bool temp = m_KeyFrames[m_SliderValue];
+        if (ImGui::Checkbox("Include Frame: ", &temp))
+        {
+            // Has been clicked assign the bool.
+            m_KeyFrames[m_SliderValue] = temp;
+
+            // Add all indexes to list and pass to listeners
+            std::vector<int> indexList;
+            for (int i = 0; i < m_KeyFrames.size(); i++) {
+                if (m_KeyFrames[i]) indexList.push_back(i);
+            }
+            AnimationKeyChangeEvent event(indexList);
             Application::Get().OnEvent(event);
 
         }
-
-        
-
-
         ImGui::EndChild();
-
-
     }
-
-
 }
 
 void UILayer::RenderExportControls()
@@ -371,7 +404,9 @@ bool UILayer::OnModelLoadComplete(ModelLoadCompleteEvent& event)
     // Simply cache the model. Animator will have been loaded too.
     m_Model = event.GetModel();
     m_Animator = event.GetAnimator();
-
+    m_KeyFrames.clear();
+    m_KeyFrames.resize(m_Animator->GetCurrentAnimation()->GetKeyframeCount(), false);
+    m_SliderValue = 0;
     // Nothing else needs this
     return true;
 }

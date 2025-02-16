@@ -16,7 +16,7 @@ int Animator::GetCurrentFrame() const
 {
 	if (!m_CurrentAnimation) return -1; // No animation playing
 
-	float frameTime = m_CurrentAnimation->GetDuration() / m_CurrentAnimation->GetFrameCount();
+	float frameTime = m_CurrentAnimation->GetDuration() / m_CurrentAnimation->GetKeyframeCount();
 	return static_cast<int>(m_CurrentTime / frameTime);
 }
 
@@ -25,7 +25,7 @@ void Animator::SetCurrentFrame(int frame)
 	if (!m_CurrentAnimation) return; // No animation playing
 
 	// Get the time of this frame and return it
-	float frameTime = m_CurrentAnimation->GetDuration() / m_CurrentAnimation->GetFrameCount();
+	float frameTime = m_CurrentAnimation->GetDuration() / m_CurrentAnimation->GetKeyframeCount();
 	m_CurrentTime = frame * frameTime;
 }
 

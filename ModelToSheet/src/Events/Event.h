@@ -13,8 +13,8 @@ enum class EventType {
 	KeyPressed, KeyReleased, KeyTyped,
 	MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
 	ModelLoadStart, ModelLoadComplete, 
-	AnimationChange, AnimationFPSChange,
-	CameraOrbitChanged,	Export
+	AnimationChange, AnimationKeyFrameChange,
+	CameraOrbitChanged,	Export, KeyframeChange
 };
 
 // Define the Event Categories. Use BIT flags for efficiency in runtime.

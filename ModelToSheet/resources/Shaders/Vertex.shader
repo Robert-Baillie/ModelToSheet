@@ -36,7 +36,7 @@ void main() {
         vec4 posePosition = boneTransform * vec4(a_Position, 1.0);
         totalPosition += posePosition * a_Weights[i];
         
-        vec3 poseNormal = mat3(boneTransform) * a_Normal;
+        vec3 poseNormal = transpose(inverse(mat3(boneTransform))) * a_Normal;
         totalNormal += poseNormal * a_Weights[i];
         
         totalWeight += a_Weights[i];

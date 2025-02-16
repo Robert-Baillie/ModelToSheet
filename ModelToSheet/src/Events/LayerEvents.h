@@ -33,7 +33,7 @@ private:
 class ModelLoadCompleteEvent : public Event {
 public:
 	ModelLoadCompleteEvent(std::shared_ptr<Model> model, std::shared_ptr<Animator> amimator)
-		: m_Model(model) , m_Animator(amimator) {}
+		: m_Model(model) , m_Animator(amimator){}
 
 	inline const std::shared_ptr<Model> GetModel() const { return m_Model; }
 	inline const std::shared_ptr<Animator> GetAnimator() const { return m_Animator; }
@@ -50,7 +50,6 @@ public:
 private:
 	std::shared_ptr<Model> m_Model;
 	std::shared_ptr<Animator> m_Animator;
-
 };
 
 
@@ -99,25 +98,29 @@ private:
 	std::string m_AnimationName;
 };
 
-// Animation Change - A model is currently active, the user has changed the animation they have linked to them.
-class AnimationFPSChangeEvent : public Event {
-public:
-	AnimationFPSChangeEvent(const float newFPS)
-		: m_FPS(newFPS) {}
 
-	const float GetFPS() { return m_FPS; }
+
+
+// Animation KeyFrameChange Event - when a user adds or removes an animation key frame, reassign the data for the viewport.
+class AnimationKeyChangeEvent : public Event {
+public:
+	AnimationKeyChangeEvent(std::vector<int> indexList)
+		: m_IndexList(indexList) {}
+
+	std::vector<int> GetIndexList() { return m_IndexList; }
 
 	std::string ToString() const override {
 		std::stringstream ss;
-		ss << "AnimationFPSChangeEvent new FPS: " << m_FPS;
+		ss << "AnimationKeyChangeEvent ";
 		return ss.str();
 	}
 
-	EVENT_CLASS_TYPE(AnimationFPSChange)
+	EVENT_CLASS_TYPE(AnimationKeyFrameChange)
 		EVENT_CLASS_CATEGORY(EventCategoryLayerAnimation)
 private:
-	float m_FPS;
+	std::vector<int> m_IndexList;
 };
+
 
 // Export Event - No data to be passed, just need to know that the button has been pressed.
 class ExportEvent : public Event {
@@ -133,6 +136,24 @@ public:
 
 	EVENT_CLASS_TYPE(Export)
 		EVENT_CLASS_CATEGORY(EventCategoryLayerOther)
+};
+
+// Keyframe Change Event  - simply pass the index of the keyframe the user has dragged onto.
+class KeyframeChangeEvent : public Event {
+public:
+	KeyframeChangeEvent(int index) :m_Index(index) {}
+
+	int GetIndex() { return m_Index; }
+	std::string ToString() const override {
+		std::stringstream ss;
+		ss << "KeyframeChangeEvent: " << m_Index;
+		return ss.str();
+	}
+	
+	EVENT_CLASS_TYPE(KeyframeChange)
+		EVENT_CLASS_CATEGORY(EventCategoryLayerOther)
+private:
+	int m_Index;
 };
 
 //// Shader change event. On the UI the user has changed the type of shader being used

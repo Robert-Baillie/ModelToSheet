@@ -45,8 +45,22 @@ public:
     std::string GetBoneName() const { return m_Name; }
     int GetBoneID() { return m_ID; }
 
-    // return the max frames in either of these, so we can know the true framecount of the animation
-    int GetMaxFrameCount() const { return std::max({ m_Positions.size(), m_Rotations.size(), m_Scales.size() }); }
+    // Getters for key frame infomation.
+    int GetNumPositionKeys() const { return m_NumPositions; }
+    int GetNumRotationKeys() const { return m_NumRotations; }
+    int GetNumScalingKeys() const { return m_NumScalings; }
+
+
+    // Return the time of any of the given
+    float GetPositionKeyTime(int index) const {
+        return index < m_NumPositions ? m_Positions[index].TimeStamp : 0.0f;
+    }
+    float GetRotationKeyTime(int index) const {
+        return index < m_NumRotations ? m_Rotations[index].TimeStamp : 0.0f;
+    }
+    float GetScaleKeyTime(int index) const {
+        return index < m_NumScalings ? m_Scales[index].TimeStamp : 0.0f;
+    }
 
 private:
     // Private methods remain the same
