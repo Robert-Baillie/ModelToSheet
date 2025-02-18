@@ -18,6 +18,15 @@ public:
 		m_Presets.push_back({ 0.0f, 270.0f, "Top" });
 		m_Presets.push_back({ 180.0f, 270.0f, "Bottom" });
 
+		// Initialise the texture sizes
+		m_TextureSizes.push_back(32);
+		m_TextureSizes.push_back(64);
+		m_TextureSizes.push_back(128);
+		m_TextureSizes.push_back(256);
+		m_TextureSizes.push_back(512);
+		m_CurrentTextureSize = 128;
+		m_CurrentTextureIndex = 2;
+
 		// Creat the Modesl Directory if it doesn't exist
 		if (!std::filesystem::exists(m_assetDirectory)) {
 			std::filesystem::create_directories(m_assetDirectory);
@@ -56,6 +65,8 @@ private:
 
 	// Presets for buttons. Initialised in Constructor.
 	std::vector<ViewPreset> m_Presets;
+	std::vector<int> m_TextureSizes;
+	int m_CurrentTextureSize, m_CurrentTextureIndex;
 
 	float m_CurrentPolarAngle = 90;
 	float m_CurrentAzimuthalAngle = 270;

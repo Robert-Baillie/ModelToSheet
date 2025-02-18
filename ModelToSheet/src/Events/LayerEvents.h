@@ -156,6 +156,25 @@ private:
 	int m_Index;
 };
 
+// Texture Size Change Event
+class TextureSizeChangeEvent : public Event {
+public:
+	TextureSizeChangeEvent(int textureSize) :m_TextureSize(textureSize) {}
+
+	int GetTextureSize() { return m_TextureSize; }
+	std::string ToString() const override {
+		std::stringstream ss;
+		ss << "TextureSizeChangeEvent: " << m_TextureSize;
+		return ss.str();
+	}
+
+	EVENT_CLASS_TYPE(TextureSizeChange)
+		EVENT_CLASS_CATEGORY(EventCategoryLayerOther)
+private:
+	int m_TextureSize;
+};
+
+
 //// Shader change event. On the UI the user has changed the type of shader being used
 //class ShaderChangeEvent : public Event {
 //public:

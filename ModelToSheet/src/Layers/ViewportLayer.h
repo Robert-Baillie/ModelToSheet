@@ -24,7 +24,7 @@ public:
     
 private:
     void RenderScene(bool isCapturingScreenshot = false);
-    
+
     void ClearCurrentModel() { delete m_CurrentAnimation; }
     void LoadModel(const std::string& path, const std::string& name);
 
@@ -43,6 +43,7 @@ private:
     bool OnExport(ExportEvent& event);
     bool OnKeyFrameChanged(AnimationKeyChangeEvent& event);
     bool OnKeyFrameSliderValueChanged(KeyframeChangeEvent& event);
+    bool OnTextureSizeChange(TextureSizeChangeEvent& event);
 
 private:
     // Camera
@@ -60,6 +61,7 @@ private:
     // Model settings
     std::shared_ptr<Model> m_Model = nullptr;
     glm::mat4 m_ModelTransform = glm::mat4(1.0f);
+    bool m_IsModelLoading = false;
 
     // Animation Settings
     std::shared_ptr<Animator> m_Animator = nullptr;
@@ -74,14 +76,14 @@ private:
     int m_CurrentPreviewFrame = 0;
     float m_AccumulatedPreviewTime = 0.0f;
     bool m_KeyframePreviewMode = false;
-    float m_PreviewSamplesPerSecond = 5.0f;
+    int m_PreviewSamplesPerSecond = 10;
 
     // Flow control
     FragmentShaderType m_CurrentFragmentShaderType = FragmentShaderType::Diffuse;
     std::unordered_map<FragmentShaderType, std::shared_ptr<Shader>> m_FragmentShaders;
 
     // Control for Texture Size
-    uint32_t m_TextureWidth = 128, m_TextureHeight = 128;
+    int m_TextureWidth = 128, m_TextureHeight = 128; // as it is in uilayer
 
     // Camera Orbit Controls7
     glm::vec3 m_OrbitCenter;

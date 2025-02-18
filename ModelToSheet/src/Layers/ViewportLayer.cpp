@@ -56,6 +56,7 @@ void ViewportLayer::OnEvent(Event& e)
 	 dispatcher.Dispatch<ExportEvent>(BIND_EVENT_FN(ViewportLayer::OnExport));
 	 dispatcher.Dispatch<AnimationKeyChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnKeyFrameChanged));
 	 dispatcher.Dispatch<KeyframeChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnKeyFrameSliderValueChanged));
+	 dispatcher.Dispatch<TextureSizeChangeEvent>(BIND_EVENT_FN(ViewportLayer::OnTextureSizeChange));
 }
 
 void ViewportLayer::OnUpdate()
@@ -147,6 +148,16 @@ void ViewportLayer::OnImGuiRender()
 	if (ImGui::Button("Diffuse")) {
 		m_CurrentShader =	m_FragmentShaders[FragmentShaderType::Diffuse];
 		m_CurrentFragmentShaderType = FragmentShaderType::Diffuse;
+
+		// Quick bug fix, if it wasn't playhing and we switched, the last render on the shader would be used. Update it if it is paused.
+		if (!m_IsPlaying) {
+			m_IsPlaying = true;
+			m_Animator->UpdateAnimation(0.0f);
+			RenderScene();
+			m_IsPlaying = false;
+		}
+		
+
 	}
 
 	ImGui::SameLine();
@@ -154,44 +165,48 @@ void ViewportLayer::OnImGuiRender()
 		m_CurrentShader = m_FragmentShaders[FragmentShaderType::Normal];
 		m_CurrentFragmentShaderType = FragmentShaderType::Normal;
 
+		// Quick bug fix, if it wasn't playhing and we switched, the last render on the shader would be used. Update it if it is paused.
+		if (!m_IsPlaying) {
+			m_IsPlaying = true;
+			m_Animator->UpdateAnimation(0.0f);
+			RenderScene();
+			m_IsPlaying = false;
+		}
 	}
 
 
 
 	/* Pause/Play button */
 	ImVec2 buttonSize(100, 30);
+	float previewPlayWidth = 210.0f;
+	float yPadding = 40.0f; // Padding from bottom of window
+
+	// Center position for the controls group
 	ImGui::SetCursorScreenPos(ImVec2(
-		ImGui::GetWindowPos().x + (sizeIm.x - 250) * 0.5f,
-		ImGui::GetWindowPos().y + sizeIm.y - 40
+		ImGui::GetWindowPos().x + (sizeIm.x - previewPlayWidth) * 0.5f,
+		ImGui::GetWindowPos().y + sizeIm.y - yPadding
 	));
-	if (ImGui::Button(m_IsPlaying ? "Pause" : "Play")) {
+
+	// Button one
+	if (ImGui::Button(m_IsPlaying ? "Pause" : "Play", buttonSize)) {
 		m_IsPlaying = !m_IsPlaying;
 		m_KeyframePreviewMode = false; // Exit preview mode when toggling back
 	}
-	
-	/* Preview button on the same line */
-	ImGui::SameLine();
-	if (!m_KeyFrameIndexList.empty() && ImGui::Button(m_KeyframePreviewMode ? "Stop Preview" : "Preview Keyframes")) {
-		m_KeyframePreviewMode = !m_KeyframePreviewMode;
-
-		if (m_KeyframePreviewMode) m_IsPlaying = false;
-		else m_IsPlaying = true;
-
-		if (!m_KeyFrameIndexList.empty())	m_CurrentPreviewFrame = m_KeyFrameIndexList[0]; // Start at the first frame
-
-		m_AccumulatedPreviewTime = 0.0f;
+	ImGui::SameLine(0, 10.0f); // Slight right padding
+	if (ImGui::Button("Preview", buttonSize)) {
+		m_KeyframePreviewMode = true;
+		m_IsPlaying = false;
 	}
 
-	/* Preview speed control */
-	if (m_KeyframePreviewMode) {
-		ImGui::SameLine();
-		float displayTime = 1.0f / m_PreviewSamplesPerSecond;
-		if (ImGui::DragFloat("Samples/sec", &m_PreviewSamplesPerSecond, 0.1f, 1.0f, 60.0f)) {
-			// Clamp to reasonable values
-			m_PreviewSamplesPerSecond = std::clamp(m_PreviewSamplesPerSecond, 1.0f, 60.0f);
-		}
-	}
-
+	// Set position of the speed control below these positions
+	ImGui::SetCursorScreenPos(ImVec2(
+		ImGui::GetWindowPos().x + (sizeIm.x - previewPlayWidth) * 0.5f,
+		ImGui::GetWindowPos().y + sizeIm.y - yPadding + 35.0f
+	));
+	float displayTime = 1.0f / m_PreviewSamplesPerSecond;
+	ImGui::PushItemWidth(previewPlayWidth);
+	ImGui::SliderInt("Preview Speed", &m_PreviewSamplesPerSecond, 1, 60, "%d samples/sec");
+	ImGui::PopItemWidth();
 
 	/* Show the export warning */
 	if (m_ShowExportWarning) ShowExportWarning();
@@ -276,6 +291,7 @@ void ViewportLayer::RenderScene(bool isCapturingScreenshot)
 	Renderer::EndScene();
 }
 
+
 void ViewportLayer::RecalculateCameraPositionFromSphericalCoords()
 {
 	// Standard Spherical to Cartesian
@@ -297,12 +313,11 @@ void ViewportLayer::ExportAnimationSpriteSheet()
 	// Get animations, key count and original types so we can revert back to them after exporting
 	auto animation = m_Animator->GetCurrentAnimation();
 	bool isPlaying = m_IsPlaying;
-	// int keyframeCount = animation->GetKeyframeCount(); // To export all
 	int keyframeCount = m_KeyFrameIndexList.size();
 	float originalTime = m_Animator->GetCurrentTime(); // Overriding a define here?
 	FragmentShaderType originalType = m_CurrentFragmentShaderType;
 	m_IsPlaying = true;
-	// Get the shader types to loop over
+
 	std::vector<FragmentShaderType> shaderTypes = {
 		FragmentShaderType::Diffuse,
 		FragmentShaderType::Normal
@@ -316,68 +331,108 @@ void ViewportLayer::ExportAnimationSpriteSheet()
 		m_CurrentShader = m_FragmentShaders[shaderType];
 		m_CurrentFragmentShaderType = shaderType;
 
-		// Store the data based on ALL keyframes
-		std::vector<unsigned char> spriteSheetPixels(
-			m_TextureWidth * m_TextureHeight * 4 * keyframeCount
-		);
+		// Initialise the bounds
+		int minX = m_TextureWidth;
+		int minY = m_TextureHeight;
+		int maxX = 0;
+		int maxY = 0;
 
-		// Loop over each key frame and capture its data.
+		// Store the frame data and the collected bounds for future use
+		std::vector<std::vector<unsigned char>> frameDataList;
+
+		// Passing over the frames and detrmining the bounds of their data
 		for (int i = 0; i < keyframeCount; i++) {
-			// Get the time of the keyframe and assign this to the animator.
-			float keyFrameTime = animation->GetKeyframeTime(m_KeyFrameIndexList[i]); // mKeyFramList[i] holds the index of what the user wants to export
+			// Get the time of keyframe and bind the rendered scene to the framebuffer
+			float keyFrameTime = animation->GetKeyframeTime(m_KeyFrameIndexList[i]);
 			m_Animator->SetCurrentTime(keyFrameTime);
-
-			// Bind the framebuffer and render this data
 			m_Framebuffer->Bind();
 			RenderScene();
 
-			// Grab the infomation from the frame buffer and read it into the framepixels.
+			// Grab the data for this texture
 			std::vector<unsigned char> framePixels(m_TextureWidth * m_TextureHeight * 4);
 			RenderCommand::ReadPixels(m_TextureWidth, m_TextureHeight, framePixels);
 			m_Framebuffer->Unbind();
 
-			// Now that is stored, assign it into the sprite sheet as above.
-			// Copy code below exports it into the spritesheet data, whilst flipping the points
+			// Store the frame data into the main list for the second pass
+			frameDataList.push_back(framePixels);
+
+			// Loop over this frame and find the bounds for it
 			for (int y = 0; y < m_TextureHeight; y++) {
-				size_t destOffset =
-					y * (m_TextureWidth * keyframeCount * 4) +
-					i * (m_TextureWidth * 4);
+				for (int x = 0; x < m_TextureWidth; x++) {
+					// Get the index of this pixel (flipping)
+					int index = ((m_TextureHeight - 1 - y) * m_TextureWidth + x) * 4;
+
+
+					// Check if the pixel has any content (including alpha)
+					if (framePixels[index + 3] > 0) { // Alpha
+						minX = std::min(minX, x);
+						minY = std::min(minY, y);
+						maxX = std::max(maxX, x);
+						maxY = std::max(maxY, y);
+					}
+				}
+			}
+		}
+
+
+		// We have the bounds, we want to pad them slightly so we don't have override on the images
+		const int padding = 3;
+		minX = std::max(0, minX - padding);
+		minY = std::max(0, minY - padding);
+		maxX = std::min(m_TextureWidth - 1, maxX + padding);
+		maxY = std::min(m_TextureHeight - 1, maxY + padding);
+
+		// New dimensions of the width and height
+		int newWidth = maxX - minX + 1;
+		int newHeight = maxY - minY + 1;
+
+		// Create trimmed sprite sheet
+		std::vector<unsigned char> spriteSheetPixels(
+			newWidth * newHeight * 4 * keyframeCount, 0 //Initialise with 0
+		);
+
+		// Second pass: copy only the content area to sprite sheet
+		for (int i = 0; i < keyframeCount; i++) {
+			const auto& framePixels = frameDataList[i];
+
+			for (int y = minY; y <= maxY; y++) {
+				size_t destOffset = ((y - minY) * newWidth * keyframeCount + i * newWidth) * 4;
+				size_t srcOffset = ((m_TextureHeight - 1 - y) * m_TextureWidth + minX) * 4;
 
 				memcpy(
 					spriteSheetPixels.data() + destOffset,
-					framePixels.data() + ((m_TextureHeight - 1 - y) * m_TextureWidth * 4),
-					m_TextureWidth * 4
+					framePixels.data() + srcOffset,
+					newWidth * 4
 				);
 			}
 		}
 
-		// Now all the info has been put into the sprite sheet, we can save this into the screenshots folder
+		// Save the trimmed sprite sheet
 		std::string filename = fmt::format(
 			"{}_keyframe_spritesheet.png",
 			Shader::GetShaderTypeName(shaderType)
 		);
 		std::string executablePath = std::filesystem::current_path().string();
 		std::string fullPath = executablePath + "/Screenshots/" + filename;
-		
-		// If no screenshot folder, create it
+
 		std::filesystem::create_directories(
 			std::filesystem::path(fullPath).parent_path()
 		);
 
-		// STBI to write this into the path
 		stbi_write_png(
 			fullPath.c_str(),
-			m_TextureWidth * keyframeCount,
-			m_TextureHeight,
+			newWidth * keyframeCount,
+			newHeight,
 			4,
 			spriteSheetPixels.data(),
-			m_TextureWidth * 4 * keyframeCount
+			newWidth * 4 * keyframeCount
 		);
 
-		m_Animator->SetCurrentTime(originalTime);
+
 	}
 
 	// Restore original state
+	m_Animator->SetCurrentTime(originalTime);
 	m_IsPlaying = isPlaying;
 	m_CurrentShader = m_FragmentShaders[originalType];
 	m_CurrentFragmentShaderType = originalType;
@@ -401,15 +456,20 @@ void ViewportLayer::ShowExportWarning()
 /* Event Methods */
 bool ViewportLayer::OnModelLoadStart(ModelLoadStartEvent& event)
 {
+	m_IsModelLoading = true;
+	
 	// A model has been clicked in the UI. Load it as intended
 	LoadModel(event.GetPath(), event.GetModelName());
+	
+	m_IsModelLoading = false;
 	m_IsPlaying = true;
 	m_KeyFrameIndexList.clear();
 	m_KeyframePreviewMode = false;
-
+	
 	// Annoyingly, we need to cache this model pointer back to UI layer, so call an event back
 	ModelLoadCompleteEvent eventTwo(m_Model, m_Animator);
 	Application::Get().OnEvent(eventTwo);
+
 
 	// No other events need this, return true.
 	return true;
@@ -473,6 +533,16 @@ bool ViewportLayer::OnKeyFrameSliderValueChanged(KeyframeChangeEvent& event)
 	// Switch to false playing so it stays at the frame.
 	m_IsPlaying = false;
 	m_KeyframePreviewMode = false;
+	return true;
+}
+
+bool ViewportLayer::OnTextureSizeChange(TextureSizeChangeEvent& event)
+{
+	// Reassign
+	m_TextureWidth = event.GetTextureSize();
+	m_TextureHeight = event.GetTextureSize();
+	m_Framebuffer->Resize(m_TextureHeight, m_TextureHeight);
+
 	return true;
 }
 

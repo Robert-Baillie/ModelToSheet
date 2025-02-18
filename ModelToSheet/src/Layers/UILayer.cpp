@@ -48,6 +48,21 @@ void UILayer::OnImGuiRender()
 	float oneThirdWidth = viewportSize.x * (1.0f / 3.0f);
 	float oneThirdsHeight = viewportSize.y * (1.0f / 3.0f);
 
+    /* Quick Bug Fix: When the window is too small this crashes (saying I need an end child which I am not calling) so simply overlay with a debug window.*/
+    if (viewport->Size.x < 640 || viewport->Size.y < 480)
+    {
+        // Set debug window to cover entire viewport
+        ImGui::SetNextWindowPos(viewport->WorkPos);
+        ImGui::SetNextWindowSize(viewport->WorkSize);
+        if (ImGui::Begin("Debug Window", nullptr, viewport_flags))
+        {
+            ImGui::Text("Window too small! Please resize to at least 600x400");
+            ImGui::Text("Current Viewport Size: %.0f x %.0f", viewport->Size.x, viewport->Size.y);
+            ImGui::Text("Minimum Required Size: 640 x 480");
+            ImGui::End();
+        }
+        return;
+    }
 
     /* Repository and Logging */
     ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y + twoThirdsHeight));
@@ -277,7 +292,6 @@ void UILayer::RenderAnimationControls()
     // Get the animations and model.
     ImGui::SeparatorText("Animations");
 
-   
     const auto& animations = m_Model->GetAnimations();
 
     if (animations.empty()) {
@@ -363,6 +377,10 @@ void UILayer::RenderAnimationControls()
         }
         ImGui::EndChild();
     }
+
+
+
+
 }
 
 void UILayer::RenderExportControls()
@@ -370,6 +388,20 @@ void UILayer::RenderExportControls()
     // Add buttons at the bottom right
     ImGui::Spacing();
     ImGui::Separator();
+    
+    ImGui::Text("Export Resolution:");
+    if (ImGui::Combo("##TextureSize", &m_CurrentTextureIndex, "32x32\0"
+        "64x64\0"
+        "128x128\0"
+        "256x256\0"
+        "512x512\0\0"))
+    {
+        m_CurrentTextureSize = m_TextureSizes[m_CurrentTextureIndex];
+
+        TextureSizeChangeEvent event(m_CurrentTextureSize);
+        Application::Get().OnEvent(event);
+    }
+
 
     // Calculate button positions
     float buttonWidth = 120.0f;
